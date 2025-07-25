@@ -71,7 +71,7 @@ export default function DashboardLayout({
   };
   
   const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
-
+  
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-40 w-full border-b bg-background">
