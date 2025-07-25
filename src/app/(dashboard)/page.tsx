@@ -17,6 +17,7 @@ import {
   Users,
   ArrowRight,
 } from "lucide-react";
+import React from 'react';
 
 const features = [
   {
@@ -63,7 +64,8 @@ const features = [
   },
 ];
 
-export default function DashboardPage() {
+export default function DashboardPage({ params }: { params: {} }) {
+  React.use(params);
   return (
     <div className="flex flex-col gap-8">
       <div>
