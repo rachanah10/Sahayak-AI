@@ -13,7 +13,7 @@ export function Logo({ className }: { className?: string }) {
       <path d="M 10,40 A 30 30 0 0 1 40 10 L 10 10 Z" fill="#FBBF24" />
 
       {/* Left red-orange element */}
-      <path d="M 20,50 L 45,65 L 45,35 Z" className="fill-accent" />
+      <path d="M 20,50 L 45,65 L 45,35 Z" fill="hsl(var(--accent))" />
 
       {/* Right green element */}
       <circle cx="85" cy="50" r="10" fill="#34D399" />
@@ -29,7 +29,8 @@ export function Logo({ className }: { className?: string }) {
         textAnchor="middle" 
         fontSize="50" 
         fontWeight="bold" 
-        className="fill-primary font-headline"
+        fill="hsl(var(--primary))"
+        fontFamily="var(--font-headline)"
       >
         S
       </text>
