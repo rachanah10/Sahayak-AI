@@ -36,10 +36,7 @@ const menuItems = [
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays },
   { href: "/visual-aid", label: "Visual Aid Generator", Icon: ImageIcon },
   { href: "/progress-tracker", label: "Progress Tracker", Icon: Users },
-];
-
-const adminMenuItems = [
-    { href: "/signup", label: "Add User", Icon: UserPlus },
+  { href: "/signup", label: "Add User", Icon: UserPlus },
 ];
 
 export default function DashboardLayout({
@@ -48,7 +45,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
@@ -70,8 +67,6 @@ export default function DashboardLayout({
     router.push('/login');
   };
   
-  const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
-  
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-40 w-full border-b bg-background">
@@ -90,7 +85,7 @@ export default function DashboardLayout({
               >
                 Dashboard
               </Link>
-              {allMenuItems.map(({ href, label }) => (
+              {menuItems.map(({ href, label }) => (
                 <Link
                   key={label}
                   href={href}
@@ -122,7 +117,7 @@ export default function DashboardLayout({
                     <DropdownMenuItem asChild>
                     <Link href="/">Dashboard</Link>
                     </DropdownMenuItem>
-                    {allMenuItems.map(({ href, label }) => (
+                    {menuItems.map(({ href, label }) => (
                     <DropdownMenuItem key={label} asChild>
                         <Link href={href}>{label}</Link>
                     </DropdownMenuItem>
