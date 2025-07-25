@@ -10,16 +10,16 @@ export function Logo({ className }: { className?: string }) {
       className={cn(className)}
     >
       {/* Top-left yellow element */}
-      <path d="M 10,40 A 30 30 0 0 1 40 10 L 10 10 Z" className="fill-[#FBBF24]" />
+      <path d="M 10,40 A 30 30 0 0 1 40 10 L 10 10 Z" fill="#FBBF24" />
 
       {/* Left red-orange element */}
       <path d="M 20,50 L 45,65 L 45,35 Z" className="fill-accent" />
 
       {/* Right green element */}
-      <circle cx="85" cy="50" r="10" className="fill-[#34D399]" />
+      <circle cx="85" cy="50" r="10" fill="#34D399" />
       
       {/* Bottom light-blue element */}
-      <rect x="30" y="80" width="50" height="15" rx="5" className="fill-[#60A5FA]" />
+      <rect x="30" y="80" width="50" height="15" rx="5" fill="#60A5FA" />
       
       {/* "S" shape */}
       <text 
