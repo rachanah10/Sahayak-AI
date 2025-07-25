@@ -66,8 +66,7 @@ export default function SignUpPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
-      // Store additional user details in Firestore
-      await setDoc(doc(db, "users", user.uid), {
+      const userData: any = {
         name: data.name,
         email: data.email,
         role: data.role,
@@ -75,7 +74,14 @@ export default function SignUpPage() {
         schoolId: data.schoolId,
         schoolIdDbLocation: data.schoolIdDbLocation,
         grade: data.grade,
-      });
+      };
+
+      if (data.email === 'admin@gmail.com') {
+        userData.is_admin = true;
+      }
+
+      // Store additional user details in Firestore
+      await setDoc(doc(db, "users", user.uid), userData);
 
       router.push("/");
     } catch (error: any) {
