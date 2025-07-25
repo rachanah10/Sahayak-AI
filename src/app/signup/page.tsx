@@ -31,6 +31,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Logo } from "@/components/logo";
+import { useAuth } from "@/hooks/use-auth";
+import React from "react";
+
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -49,6 +52,7 @@ export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { user, loading } = useAuth();
 
   const {
     register,
@@ -58,15 +62,28 @@ export default function SignUpPage() {
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
   });
+  
+  React.useEffect(() => {
+    if (!loading && !user?.is_admin) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized",
+        description: "You do not have permission to view this page.",
+      });
+      router.push("/");
+    }
+  }, [loading, user, router, toast]);
 
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     setIsLoading(true);
     try {
-      // Create user with email and password
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const user = userCredential.user;
+      
+      const adminAuth = auth;
+      const userCredential = await createUserWithEmailAndPassword(adminAuth, data.email, data.password);
+      const newUser = userCredential.user;
 
       const userData: any = {
+        uid: newUser.uid,
         name: data.name,
         email: data.email,
         role: data.role,
@@ -76,14 +93,19 @@ export default function SignUpPage() {
         grade: data.grade,
       };
 
-      if (data.email === 'admin@gmail.com') {
+      if (data.email === 'prajwalk17072001@gmail.com') {
         userData.is_admin = true;
       }
 
-      // Store additional user details in Firestore
-      await setDoc(doc(db, "users", user.uid), userData);
+      await setDoc(doc(db, "users", newUser.uid), userData);
+
+      toast({
+        title: "User Created",
+        description: `Successfully created user: ${data.name}`,
+      });
 
       router.push("/");
+
     } catch (error: any) {
       console.error("Sign up Error:", error);
       toast({
@@ -96,6 +118,14 @@ export default function SignUpPage() {
     }
   };
 
+  if (loading || !user?.is_admin) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner className="w-12 h-12" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -103,8 +133,8 @@ export default function SignUpPage() {
            <div className="flex justify-center mb-4">
              <Logo className="w-12 h-12" />
            </div>
-          <CardTitle>Create an Account</CardTitle>
-          <CardDescription>Join Sahayak to empower your teaching journey.</CardDescription>
+          <CardTitle>Create a New User</CardTitle>
+          <CardDescription>Add a new user to the platform. An email and password will be created for them.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
@@ -160,14 +190,8 @@ export default function SignUpPage() {
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Spinner className="mr-2" />}
-              Sign Up
+              Create User
             </Button>
-             <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/login" className="font-semibold text-primary hover:underline">
-                Sign In
-              </Link>
-            </p>
           </CardFooter>
         </form>
       </Card>

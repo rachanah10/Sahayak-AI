@@ -51,9 +51,8 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login Error:", error);
       let description = "An unexpected error occurred. Please try again.";
-      // Firebase returns 'auth/invalid-credential' for both wrong password and user not found
-      // to avoid user enumeration attacks.
-      if (error.code === 'auth/invalid-credential') {
+      
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/configuration-not-found') {
         description = "Incorrect email or password. Please try again.";
       }
       toast({
@@ -95,10 +94,7 @@ export default function LoginPage() {
               Sign In
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{" "}
-              <Link href="/signup" className="font-semibold text-primary hover:underline">
-                Sign Up
-              </Link>
+              New user? Please contact an administrator to create an account.
             </p>
           </CardFooter>
         </form>

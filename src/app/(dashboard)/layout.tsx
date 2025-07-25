@@ -12,6 +12,7 @@ import {
   Users,
   Menu,
   LogOut,
+  UserPlus,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,10 @@ const menuItems = [
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays },
   { href: "/visual-aid", label: "Visual Aid Generator", Icon: ImageIcon },
   { href: "/progress-tracker", label: "Progress Tracker", Icon: Users },
+];
+
+const adminMenuItems = [
+    { href: "/signup", label: "Add User", Icon: UserPlus },
 ];
 
 export default function DashboardLayout({
@@ -64,6 +69,8 @@ export default function DashboardLayout({
     await signOut();
     router.push('/login');
   };
+  
+  const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -83,7 +90,7 @@ export default function DashboardLayout({
               >
                 Dashboard
               </Link>
-              {menuItems.map(({ href, label }) => (
+              {allMenuItems.map(({ href, label }) => (
                 <Link
                   key={label}
                   href={href}
@@ -115,7 +122,7 @@ export default function DashboardLayout({
                     <DropdownMenuItem asChild>
                     <Link href="/">Dashboard</Link>
                     </DropdownMenuItem>
-                    {menuItems.map(({ href, label }) => (
+                    {allMenuItems.map(({ href, label }) => (
                     <DropdownMenuItem key={label} asChild>
                         <Link href={href}>{label}</Link>
                     </DropdownMenuItem>
