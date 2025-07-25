@@ -51,7 +51,9 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login Error:", error);
       let description = "An unexpected error occurred. Please try again.";
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+      // Firebase returns 'auth/invalid-credential' for both wrong password and user not found
+      // to avoid user enumeration attacks.
+      if (error.code === 'auth/invalid-credential') {
         description = "Incorrect email or password. Please try again.";
       }
       toast({
