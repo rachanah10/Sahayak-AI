@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
   BookOpen,
   NotebookTabs,
   MessageSquare,
@@ -12,6 +11,7 @@ import {
   Image as ImageIcon,
   Users,
   Menu,
+  LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
 const menuItems = [
   { href: "/content-generator", label: "Content Generator", Icon: BookOpen },
@@ -38,6 +42,26 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
+
+  if (loading) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <Spinner className="w-12 h-12" />
+        </div>
+    )
+  }
+
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -70,25 +94,38 @@ export default function DashboardLayout({
               ))}
             </nav>
           </div>
-          <div className="md:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle Menu</span>
+          <div className="flex items-center gap-4">
+             <div className="hidden md:flex items-center gap-2 text-sm">
+                <span>{user.email}</span>
+                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/">Dashboard</Link>
-                </DropdownMenuItem>
-                {menuItems.map(({ href, label }) => (
-                  <DropdownMenuItem key={label} asChild>
-                    <Link href={href}>{label}</Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            </div>
+            <div className="md:hidden">
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Toggle Menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                    <Link href="/">Dashboard</Link>
+                    </DropdownMenuItem>
+                    {menuItems.map(({ href, label }) => (
+                    <DropdownMenuItem key={label} asChild>
+                        <Link href={href}>{label}</Link>
+                    </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                     <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Sign Out</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>
