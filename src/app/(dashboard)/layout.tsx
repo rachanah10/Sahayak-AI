@@ -43,6 +43,12 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
 
+  if (pathname === "/") {
+    return (
+      <main className="flex-1 p-4 md:p-8">{children}</main>
+    )
+  }
+
   return (
     <SidebarProvider>
       <Sidebar side="left" variant="sidebar" collapsible="icon">
@@ -58,7 +64,7 @@ export default function DashboardLayout({
           <SidebarMenu>
             {menuItems.map(({ href, label, Icon }) => (
               <SidebarMenuItem key={href}>
-                <Link href={href} passHref>
+                <Link href={href}>
                   <SidebarMenuButton
                     isActive={pathname === href}
                     tooltip={label}
