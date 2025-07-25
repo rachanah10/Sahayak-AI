@@ -70,7 +70,8 @@ export default function DashboardLayout({
     router.push('/login');
   };
   
-  const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
+  // const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
+  const allMenuItems = [...menuItems, ...adminMenuItems];
   
   return (
     <div className="flex flex-col min-h-screen">
