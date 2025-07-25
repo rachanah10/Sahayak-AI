@@ -48,7 +48,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
@@ -70,8 +70,7 @@ export default function DashboardLayout({
     router.push('/login');
   };
   
-  // const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
-  const allMenuItems = [...menuItems, ...adminMenuItems];
+  const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
   
   return (
     <div className="flex flex-col min-h-screen">
