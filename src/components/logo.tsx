@@ -3,24 +3,43 @@ import { cn } from "@/lib/utils";
 export function Logo({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 160 160"
+      width="100"
+      height="100"
+      viewBox="0 0 100 100"
       xmlns="http://www.w3.org/2000/svg"
-      className={cn("text-primary", className)}
+      className={cn(className)}
     >
-      <path
-        fill="currentColor"
-        d="M140,40 L130,50 L110,50 L120,40 Z"
-      />
-      <path
-        fill="currentColor"
-        d="M130,50 L110,50 L110,60 L130,60 Z"
-      />
-      <path
-        fill="currentColor"
-        d="M120,30 L110,40 L120,40 L130,30 Z"
-      />
-      <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fontSize="40" fontWeight="bold" fill="currentColor">
-        SAHAYAK
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="hsl(var(--primary))" />
+          <stop offset="100%" stopColor="hsl(var(--accent))" />
+        </linearGradient>
+      </defs>
+      
+      {/* Top-left yellow element */}
+      <path d="M 10,40 A 30 30 0 0 1 40 10 L 10 10 Z" fill="#FBBF24" />
+
+      {/* Left red-orange element */}
+      <path d="M 20,50 L 45,65 L 45,35 Z" fill="hsl(var(--accent))" />
+
+      {/* Right green element */}
+      <circle cx="85" cy="50" r="10" fill="#34D399" />
+      
+      {/* Bottom light-blue element */}
+      <rect x="30" y="80" width="50" height="15" rx="5" fill="#60A5FA" />
+      
+      {/* "S" shape */}
+      <text 
+        x="50%" 
+        y="55%" 
+        dominantBaseline="middle" 
+        textAnchor="middle" 
+        fontSize="50" 
+        fontWeight="bold" 
+        fill="hsl(var(--primary))"
+        className="font-headline"
+      >
+        S
       </text>
     </svg>
   );
