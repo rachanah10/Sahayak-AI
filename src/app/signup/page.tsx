@@ -36,7 +36,7 @@ const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Please enter a valid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  role: z.enum(["teacher", "student"]),
+  role: z.enum(["teacher", "student"], { required_error: "Please select a role."}),
   school: z.string().min(2, "Please enter a school name."),
   schoolId: z.string().min(1, "Please enter a school ID."),
   schoolIdDbLocation: z.string().min(1, "Please enter the DB location."),
