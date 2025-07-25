@@ -79,7 +79,7 @@ export default function SignUpPage() {
 
       router.push("/");
     } catch (error: any) {
-      console.error(error);
+      console.error("Sign up Error:", error);
       toast({
         variant: "destructive",
         title: "Sign Up Failed",
