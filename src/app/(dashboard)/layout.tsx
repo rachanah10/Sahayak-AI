@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
+import React from "react";
 
 const menuItems = [
   { href: "/content-generator", label: "Content Generator", Icon: BookOpen },
@@ -45,17 +46,18 @@ export default function DashboardLayout({
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
 
-  if (loading) {
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) {
     return (
         <div className="flex h-screen items-center justify-center">
             <Spinner className="w-12 h-12" />
         </div>
     )
-  }
-
-  if (!user) {
-    router.push('/login');
-    return null;
   }
 
   const handleSignOut = async () => {
