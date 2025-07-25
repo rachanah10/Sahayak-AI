@@ -64,13 +64,13 @@ export default function SignUpPage() {
   });
   
   React.useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user?.is_admin) {
       toast({
         variant: "destructive",
         title: "Unauthorized",
-        description: "You must be logged in to view this page.",
+        description: "You do not have permission to view this page.",
       });
-      router.push("/login");
+      router.push("/");
     }
   }, [loading, user, router, toast]);
 
@@ -93,6 +93,10 @@ export default function SignUpPage() {
         grade: data.grade,
       };
 
+      if (data.email === 'prajwalk17072001@gmail.com') {
+        userData.is_admin = true;
+      }
+
       await setDoc(doc(db, "users", newUser.uid), userData);
 
       toast({
@@ -114,7 +118,7 @@ export default function SignUpPage() {
     }
   };
 
-  if (loading || !user) {
+  if (loading || !user?.is_admin) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Spinner className="w-12 h-12" />
