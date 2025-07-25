@@ -9,24 +9,17 @@ export function Logo({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       className={cn(className)}
     >
-      <defs>
-        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="hsl(var(--primary))" />
-          <stop offset="100%" stopColor="hsl(var(--accent))" />
-        </linearGradient>
-      </defs>
-      
       {/* Top-left yellow element */}
-      <path d="M 10,40 A 30 30 0 0 1 40 10 L 10 10 Z" fill="#FBBF24" />
+      <path d="M 10,40 A 30 30 0 0 1 40 10 L 10 10 Z" className="fill-[#FBBF24]" />
 
       {/* Left red-orange element */}
-      <path d="M 20,50 L 45,65 L 45,35 Z" fill="hsl(var(--accent))" />
+      <path d="M 20,50 L 45,65 L 45,35 Z" className="fill-accent" />
 
       {/* Right green element */}
-      <circle cx="85" cy="50" r="10" fill="#34D399" />
+      <circle cx="85" cy="50" r="10" className="fill-[#34D399]" />
       
       {/* Bottom light-blue element */}
-      <rect x="30" y="80" width="50" height="15" rx="5" fill="#60A5FA" />
+      <rect x="30" y="80" width="50" height="15" rx="5" className="fill-[#60A5FA]" />
       
       {/* "S" shape */}
       <text 
@@ -36,8 +29,7 @@ export function Logo({ className }: { className?: string }) {
         textAnchor="middle" 
         fontSize="50" 
         fontWeight="bold" 
-        fill="hsl(var(--primary))"
-        className="font-headline"
+        className="fill-primary font-headline"
       >
         S
       </text>
