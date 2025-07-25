@@ -22,9 +22,8 @@ import {
   CalendarDays,
   Image as ImageIcon,
   Users,
-  Bot,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
 
 const menuItems = [
   { href: "/", label: "Dashboard", Icon: LayoutDashboard },
@@ -49,7 +48,7 @@ export default function DashboardLayout({
       <Sidebar side="left" variant="sidebar" collapsible="icon">
         <SidebarHeader className="p-4">
           <Link href="/" className="flex items-center gap-2">
-            <Bot className="w-8 h-8 text-primary" />
+            <Logo className="w-8 h-8" />
             <span className="text-lg font-semibold font-headline group-data-[collapsible=icon]:hidden">
               Sahayak
             </span>
