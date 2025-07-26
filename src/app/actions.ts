@@ -12,6 +12,7 @@ import { generateAssessmentQuestions } from "@/ai/flows/generate-assessment-ques
 import { createWeeklyLessonPlan } from "@/ai/flows/create-weekly-lesson-plan";
 import { generateVisualAidDiagram } from "@/ai/flows/generate-visual-aid-diagram";
 import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
+import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 
 // Re-exporting the functions to be used as server actions
 // This is the correct pattern for "use server" files.
@@ -27,3 +28,4 @@ export const generateAssessmentQuestionsAction = generateAssessmentQuestions;
 export const createWeeklyLessonPlanAction = createWeeklyLessonPlan;
 export const generateVisualAidDiagramAction = generateVisualAidDiagram;
 export const suggestFollowUpContentAction = suggestFollowUpContent;
+export const saveToContentLibraryAction = saveToContentLibrary;

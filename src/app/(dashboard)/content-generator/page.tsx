@@ -28,14 +28,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { generateLocalizedContentAction, suggestTagsForContentAction } from "@/app/actions";
+import { generateLocalizedContentAction, suggestTagsForContentAction, saveToContentLibraryAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { BookOpen, Lightbulb } from "lucide-react";
+import { BookOpen, Lightbulb, Save } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { GenerateLocalizedContentOutput, GenerateLocalizedContentInput } from "@/ai/flows/generate-localized-content";
+import type { SaveToContentLibraryInput } from "@/ai/flows/save-to-content-library";
 
 const schema = z.object({
-  prompt: z.string().min(1, "Please enter a prompt."),
+  prompt: z.string(),
   localizationDetails: z.string().optional(),
   grade: z.string().min(1, "Please select a grade level."),
   language: z.string(),
@@ -44,7 +45,7 @@ const schema = z.object({
   tags: z.array(z.string()).optional(),
 }).refine(data => data.generateContent || data.generateImage, {
     message: "You must select to generate either content or an image.",
-    path: ["generateContent"], 
+    path: ["generateContent"],
 });
 
 type FormFields = z.infer<typeof schema>;
@@ -52,7 +53,9 @@ type FormFields = z.infer<typeof schema>;
 export default function ContentGeneratorPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [output, setOutput] = useState<GenerateLocalizedContentOutput | null>(null);
+  const [editedStory, setEditedStory] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -68,6 +71,7 @@ export default function ContentGeneratorPage() {
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
     defaultValues: {
+      prompt: "",
       language: "English",
       generateContent: true,
       generateImage: true,
@@ -103,7 +107,7 @@ export default function ContentGeneratorPage() {
       setIsSuggesting(false);
     }
   };
-  
+
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => {
         const newSet = new Set(prev);
@@ -119,9 +123,13 @@ export default function ContentGeneratorPage() {
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     setIsGenerating(true);
     setOutput(null);
+    setEditedStory("");
     try {
       const result = await generateLocalizedContentAction({ ...data, tags: Array.from(selectedTags) });
       setOutput(result);
+      if (result.localizedStory) {
+        setEditedStory(result.localizedStory);
+      }
     } catch (error) {
       console.error(error);
       toast({
@@ -131,6 +139,35 @@ export default function ContentGeneratorPage() {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveToLibrary = async () => {
+    if (!output) return;
+    setIsSaving(true);
+    try {
+      const { prompt, grade, language } = getValues();
+      const payload: SaveToContentLibraryInput = {
+        prompt,
+        grade,
+        language,
+        story: editedStory,
+        imageUrl: output.diagramDataUri,
+      }
+      await saveToContentLibraryAction(payload);
+      toast({
+        title: "Saved to Library",
+        description: "Your content has been saved successfully.",
+      });
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to save to library. Please try again.",
+        });
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -155,9 +192,8 @@ export default function ContentGeneratorPage() {
                 {errors.prompt && <p className="text-sm text-destructive">{errors.prompt.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="localizationDetails">Localization Details</Label>
+                <Label htmlFor="localizationDetails">Localization Details (Optional)</Label>
                 <Input id="localizationDetails" placeholder="e.g., A village in West Bengal, use local fauna" {...register("localizationDetails")} />
-                {errors.localizationDetails && <p className="text-sm text-destructive">{errors.localizationDetails.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -197,7 +233,6 @@ export default function ContentGeneratorPage() {
               </div>
                {errors.generateContent && <p className="text-sm text-destructive">{errors.generateContent.message}</p>}
 
-
               {/* Smart Content Assistant */}
               <Card className="bg-muted/50">
                 <CardHeader>
@@ -205,7 +240,7 @@ export default function ContentGeneratorPage() {
                   <CardDescription>Get AI-powered tags to improve your content generation.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button type="button" variant="outline" onClick={handleSuggestTags} disabled={isSuggesting}>
+                  <Button type="button" variant="outline" onClick={handleSuggestTags} disabled={isSuggesting || !formValues.prompt}>
                     {isSuggesting ? <Spinner className="mr-2"/> : <Lightbulb className="mr-2" />}
                     Suggest Tags
                   </Button>
@@ -233,7 +268,7 @@ export default function ContentGeneratorPage() {
 
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={isGenerating}>
+              <Button type="submit" disabled={isGenerating || !formValues.prompt}>
                 {isGenerating && <Spinner className="mr-2" />}
                 Generate
               </Button>
@@ -254,7 +289,13 @@ export default function ContentGeneratorPage() {
         {output && (
             <Card>
                 <CardHeader>
-                    <CardTitle>Generated Output</CardTitle>
+                    <div className="flex justify-between items-start">
+                        <CardTitle>Generated Output</CardTitle>
+                        <Button variant="outline" size="sm" onClick={handleSaveToLibrary} disabled={isSaving}>
+                            {isSaving ? <Spinner className="mr-2" /> : <Save className="mr-2" />}
+                            Save to Library
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {output.diagramDataUri && (
@@ -272,10 +313,12 @@ export default function ContentGeneratorPage() {
                     )}
                     {output.localizedStory && (
                         <div>
-                             <h3 className="font-bold mb-2">Generated Story</h3>
-                            <div className="prose prose-sm dark:prose-invert whitespace-pre-wrap p-4 border rounded-lg bg-muted/30">
-                                {output.localizedStory}
-                            </div>
+                             <h3 className="font-bold mb-2">Generated Story (Editable)</h3>
+                             <Textarea
+                                value={editedStory}
+                                onChange={(e) => setEditedStory(e.target.value)}
+                                className="min-h-48"
+                             />
                         </div>
                     )}
                 </CardContent>

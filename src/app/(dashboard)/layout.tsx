@@ -17,6 +17,7 @@ import {
   UserPlus,
   PanelLeft,
   Search,
+  Library,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { href: "/", label: "Dashboard", Icon: BookOpen, exact: true },
   { href: "/content-generator", label: "Content Generator", Icon: BookOpen },
+  { href: "/content-library", label: "Content Library", Icon: Library },
   { href: "/homework", label: "Homework", Icon: NotebookTabs },
   { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare },
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck },
@@ -135,17 +137,15 @@ export default function DashboardLayout({
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-                <SheetHeader className="sr-only">
-                    <SheetTitle>Navigation Menu</SheetTitle>
-                    <SheetDescription>Main navigation links for the application.</SheetDescription>
-                </SheetHeader>
-                <div className="flex h-[60px] items-center border-b px-6">
+            <SheetContent side="left" className="flex flex-col p-0">
+                <SheetHeader className="p-6 pb-2">
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                  <SheetDescription className="sr-only">Main navigation links for the application.</SheetDescription>
                   <Link href="/" className="flex items-center gap-2 font-semibold">
                     <Logo className="h-6 w-6" />
                     <span>Sahayak</span>
                   </Link>
-                </div>
+                </SheetHeader>
                 <SidebarNav user={user} />
             </SheetContent>
           </Sheet>

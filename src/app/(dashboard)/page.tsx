@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   Users,
   ArrowRight,
+  Library,
 } from "lucide-react";
 import React from 'react';
 import { useAuth } from "@/hooks/use-auth";
@@ -29,6 +30,12 @@ const features = [
     description: "Create localized, culturally relevant stories and worksheets.",
     href: "/content-generator",
     Icon: BookOpen,
+  },
+   {
+    title: "Content Library",
+    description: "View and manage all your generated and saved content.",
+    href: "/content-library",
+    Icon: Library,
   },
   {
     title: "Homework",
