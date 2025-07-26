@@ -1,9 +1,9 @@
 "use server";
 
 import {
-  generateLocalizedContent,
+  generateLocalizedContentAction,
   type GenerateLocalizedContentInput,
-  suggestTagsForContent,
+  suggestTagsForContentAction,
   type SuggestTagsForContentInput,
 } from "@/ai/flows/generate-localized-content";
 import {
@@ -34,13 +34,13 @@ import {
 export async function generateLocalizedContentAction(
   input: GenerateLocalizedContentInput
 ) {
-  return await generateLocalizedContent(input);
+  return await generateLocalizedContentAction(input);
 }
 
 export async function suggestTagsForContentAction(
   input: SuggestTagsForContentInput
 ) {
-  return await suggestTagsForContent(input);
+  return await suggestTagsForContentAction(input);
 }
 
 
