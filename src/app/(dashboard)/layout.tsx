@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -13,6 +14,8 @@ import {
   Menu,
   LogOut,
   UserPlus,
+  PanelLeft,
+  Search,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -20,15 +23,21 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import React from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
+  { href: "/", label: "Dashboard", Icon: BookOpen, exact: true },
   { href: "/content-generator", label: "Content Generator", Icon: BookOpen },
   { href: "/differentiated-worksheets", label: "Differentiated Worksheets", Icon: NotebookTabs },
   { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare },
@@ -42,12 +51,39 @@ const adminMenuItems = [
   { href: "/signup", label: "Add User", Icon: UserPlus },
 ];
 
+
+function SidebarNav({ user }: { user: any }) {
+  const pathname = usePathname();
+  const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
+
+  return (
+    <nav className="grid items-start px-4 text-sm font-medium">
+      {allMenuItems.map(({ href, label, Icon, exact }) => {
+        const isActive = exact ? pathname === href : pathname.startsWith(href);
+        return (
+          <Link
+            key={label}
+            href={href}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+              isActive && "bg-muted text-primary"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
 
@@ -57,6 +93,11 @@ export default function DashboardLayout({
     }
   }, [loading, user, router]);
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+  
   if (loading || !user) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -65,80 +106,61 @@ export default function DashboardLayout({
     )
   }
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/login');
-  };
-  
-  const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
-
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 z-40 w-full border-b bg-background">
-        <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-          <div className="flex gap-6 md:gap-10">
-            <Link href="/" className="flex items-center space-x-2">
-              <Logo className="w-8 h-8" />
-              <span className="inline-block font-bold">Sahayak</span>
+    <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 lg:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-[60px] items-center border-b px-6">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
+              <Logo className="h-6 w-6" />
+              <span className="">Sahayak</span>
             </Link>
-            <nav className="hidden gap-6 md:flex">
-              <Link
-                href="/"
-                className={`flex items-center text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === "/" ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                Dashboard
-              </Link>
-              {allMenuItems.map(({ href, label }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  className={`flex items-center text-sm font-medium transition-colors hover:text-primary ${
-                    pathname === href ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {label}
-                </Link>
-              ))}
-            </nav>
           </div>
-          <div className="flex items-center gap-4">
-             <div className="hidden md:flex items-center gap-2 text-sm">
-                <span>{user.email}</span>
-                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4" />
-                </Button>
-            </div>
-            <div className="md:hidden">
-                <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle Menu</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                    <Link href="/">Dashboard</Link>
-                    </DropdownMenuItem>
-                    {allMenuItems.map(({ href, label }) => (
-                    <DropdownMenuItem key={label} asChild>
-                        <Link href={href}>{label}</Link>
-                    </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                     <DropdownMenuItem onClick={handleSignOut}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Sign Out</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
+          <div className="flex-1 overflow-auto py-2">
+            <SidebarNav user={user} />
           </div>
         </div>
-      </header>
-      <main className="flex-1 container p-4 md:p-8">{children}</main>
+      </div>
+      <div className="flex flex-col">
+        <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-muted/40 px-6">
+           <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col">
+                <div className="flex h-[60px] items-center border-b px-6">
+                  <Link href="/" className="flex items-center gap-2 font-semibold">
+                    <Logo className="h-6 w-6" />
+                    <span>Sahayak</span>
+                  </Link>
+                </div>
+                <SidebarNav user={user} />
+            </SheetContent>
+          </Sheet>
+          <div className="w-full flex-1" />
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Logo className="h-8 w-8" />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account ({user.email})</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
+        <main className="flex-1 p-4 md:p-8 overflow-auto">{children}</main>
+      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,6 +8,7 @@ import { auth, db } from '@/lib/firebase';
 
 interface AuthUser extends User {
   is_admin?: boolean;
+  name?: string;
 }
 
 export function useAuth() {
@@ -20,7 +22,7 @@ export function useAuth() {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUser({ ...firebaseUser, is_admin: userData.is_admin || false });
+          setUser({ ...firebaseUser, ...userData, is_admin: userData.is_admin || false });
         } else {
           // User exists in Auth but not Firestore. Handle this case.
           setUser({ ...firebaseUser, is_admin: false });

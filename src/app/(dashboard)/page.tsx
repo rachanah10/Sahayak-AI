@@ -1,3 +1,6 @@
+
+"use client";
+
 import Link from "next/link";
 import {
   Card,
@@ -18,6 +21,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import React from 'react';
+import { useAuth } from "@/hooks/use-auth";
 
 const features = [
   {
@@ -66,11 +70,12 @@ const features = [
 
 export default function DashboardPage({ params }: { params: {} }) {
   React.use(params);
+  const { user } = useAuth();
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight font-headline">
-          Welcome to Sahayak, your AI Teaching Companion!
+          Welcome to Sahayak, {user?.name || 'your AI Teaching Companion'}!
         </h1>
         <p className="text-muted-foreground">
           Select a tool below to get started.
