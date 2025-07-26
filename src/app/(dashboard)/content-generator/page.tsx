@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -34,9 +35,9 @@ import { Spinner } from "@/components/ui/spinner";
 import type { GenerateLocalizedContentOutput, GenerateLocalizedContentInput } from "@/ai/flows/generate-localized-content";
 
 const schema = z.object({
-  prompt: z.string().min(10, "Please enter a prompt of at least 10 characters."),
-  localizationDetails: z.string().min(5, "Please enter some localization details."),
-  grade: z.string().min(1, "Please enter a grade level."),
+  prompt: z.string().min(1, "Please enter a prompt."),
+  localizationDetails: z.string().optional(),
+  grade: z.string().min(1, "Please select a grade level."),
   language: z.string(),
   generateContent: z.boolean(),
   generateImage: z.boolean(),
@@ -70,6 +71,7 @@ export default function ContentGeneratorPage() {
       language: "English",
       generateContent: true,
       generateImage: true,
+      grade: "4th Grade",
     },
   });
 
@@ -80,15 +82,15 @@ export default function ContentGeneratorPage() {
     setSuggestedTags([]);
     try {
       const { prompt, localizationDetails, grade, language } = getValues();
-      if (!prompt || !localizationDetails || !grade || !language) {
+      if (!prompt || !grade || !language) {
          toast({
             variant: "destructive",
             title: "Missing Information",
-            description: "Please fill out Prompt, Localization, Grade, and Language to get suggestions.",
+            description: "Please fill out Prompt, Grade, and Language to get suggestions.",
          });
         return;
       }
-      const result = await suggestTagsForContentAction({ prompt, localizationDetails, grade, language });
+      const result = await suggestTagsForContentAction({ prompt, localizationDetails: localizationDetails || "", grade, language });
       setSuggestedTags(result.suggestedTags);
     } catch (error) {
       console.error(error);
@@ -153,14 +155,21 @@ export default function ContentGeneratorPage() {
                 {errors.prompt && <p className="text-sm text-destructive">{errors.prompt.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="localizationDetails">Localization Details *</Label>
+                <Label htmlFor="localizationDetails">Localization Details</Label>
                 <Input id="localizationDetails" placeholder="e.g., A village in West Bengal, use local fauna" {...register("localizationDetails")} />
                 {errors.localizationDetails && <p className="text-sm text-destructive">{errors.localizationDetails.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="grade">Grade *</Label>
-                    <Input id="grade" placeholder="e.g., 4th Grade" {...register("grade")} />
+                    <Select onValueChange={(value) => setValue("grade", value)} defaultValue={formValues.grade}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {Array.from({length: 10}, (_, i) => `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade`).map(grade => (
+                                <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     {errors.grade && <p className="text-sm text-destructive">{errors.grade.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -179,11 +188,11 @@ export default function ContentGeneratorPage() {
               <div className="grid grid-cols-2 gap-4 pt-2">
                   <div className="flex items-center space-x-2">
                       <Switch id="generateContent" {...register("generateContent")} checked={formValues.generateContent} onCheckedChange={(c) => setValue("generateContent", c)} />
-                      <Label htmlFor="generateContent">Generate Content?</Label>
+                      <Label htmlFor="generateContent">Generate Content</Label>
                   </div>
                    <div className="flex items-center space-x-2">
                       <Switch id="generateImage" {...register("generateImage")} checked={formValues.generateImage} onCheckedChange={(c) => setValue("generateImage", c)}/>
-                      <Label htmlFor="generateImage">Generate Image?</Label>
+                      <Label htmlFor="generateImage">Generate Image</Label>
                   </div>
               </div>
                {errors.generateContent && <p className="text-sm text-destructive">{errors.generateContent.message}</p>}

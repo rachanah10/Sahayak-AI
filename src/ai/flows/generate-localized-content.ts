@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -32,7 +33,7 @@ export type SuggestTagsForContentOutput = z.infer<typeof SuggestTagsForContentOu
 // Main Content Generation Schemas
 const GenerateLocalizedContentInputSchema = z.object({
   prompt: z.string().describe('The prompt for generating the localized story.'),
-  localizationDetails: z.string().describe('Details about the target region, culture, and context for localization.'),
+  localizationDetails: z.string().optional().describe('Details about the target region, culture, and context for localization.'),
   grade: z.string().describe('The grade level for the content.'),
   language: z.string().describe('The target language for the content.'),
   generateImage: z.boolean().describe('Whether to generate a blackboard-friendly image.'),
@@ -96,7 +97,9 @@ const generateContentFinalPrompt = ai.definePrompt({
   prompt: `You are a story writer specializing in localizing content for specific regions and cultures. Based on the following prompt and details, generate a culturally relevant and engaging story for students.
 
   Prompt: {{{prompt}}}
+  {{#if localizationDetails}}
   Localization Details: {{{localizationDetails}}}
+  {{/if}}
   Grade Level: {{{grade}}}
   Target Language: {{{language}}}
   {{#if tags}}
