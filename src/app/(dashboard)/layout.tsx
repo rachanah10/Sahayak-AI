@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { href: "/", label: "Dashboard", Icon: BookOpen, exact: true },
   { href: "/content-generator", label: "Content Generator", Icon: BookOpen },
-  { href: "/differentiated-worksheets", label: "Differentiated Worksheets", Icon: NotebookTabs },
+  { href: "/homework", label: "Homework", Icon: NotebookTabs },
   { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare },
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck },
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays },

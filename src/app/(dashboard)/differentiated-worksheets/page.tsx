@@ -16,12 +16,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { generateDifferentiatedWorksheetsAction } from "@/app/actions";
+import { generateHomeworkAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { NotebookTabs } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { GenerateDifferentiatedWorksheetsOutput, GenerateDifferentiatedWorksheetsInput } from "@/ai/flows/generate-differentiated-worksheets";
+import type { GenerateHomeworkOutput, GenerateHomeworkInput } from "@/ai/flows/generate-homework";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -40,9 +40,9 @@ const schema = z.object({
 
 type FormFields = z.infer<typeof schema>;
 
-export default function DifferentiatedWorksheetsPage() {
+export default function HomeworkPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [worksheets, setWorksheets] = useState<GenerateDifferentiatedWorksheetsOutput | null>(null);
+  const [worksheets, setWorksheets] = useState<GenerateHomeworkOutput | null>(null);
   const { toast } = useToast();
 
   const {
@@ -67,7 +67,7 @@ export default function DifferentiatedWorksheetsPage() {
     setWorksheets(null);
     try {
       const textbookPageImage = await fileToDataUri(data.image[0]);
-      const result = await generateDifferentiatedWorksheetsAction({
+      const result = await generateHomeworkAction({
         topic: data.topic,
         textbookPageImage,
       });
@@ -88,14 +88,14 @@ export default function DifferentiatedWorksheetsPage() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <div className="flex flex-col gap-8">
         <PageHeader
-          title="Differentiated Worksheets"
+          title="Homework Generator"
           description="Upload a textbook page image to generate worksheets for different learning levels."
           Icon={NotebookTabs}
         />
         <Card>
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardHeader>
-              <CardTitle>Worksheet Details</CardTitle>
+              <CardTitle>Homework Details</CardTitle>
               <CardDescription>Provide a topic and a textbook image.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

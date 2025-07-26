@@ -4,7 +4,7 @@ config();
 import '@/ai/flows/generate-localized-content.ts';
 import '@/ai/flows/generate-assessment-questions.ts';
 import '@/ai/flows/answer-teaching-question.ts';
-import '@/ai/flows/generate-differentiated-worksheets.ts';
+import '@/ai/flows/generate-homework.ts';
 import '@/ai/flows/suggest-follow-up-content.ts';
 import '@/ai/flows/generate-visual-aid-diagram.ts';
 import '@/ai/flows/create-weekly-lesson-plan.ts';

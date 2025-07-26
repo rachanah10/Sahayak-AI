@@ -31,9 +31,9 @@ const features = [
     Icon: BookOpen,
   },
   {
-    title: "Differentiated Worksheets",
+    title: "Homework",
     description: "Generate multi-level worksheets from a textbook image.",
-    href: "/differentiated-worksheets",
+    href: "/homework",
     Icon: NotebookTabs,
   },
   {

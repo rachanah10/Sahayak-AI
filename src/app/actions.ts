@@ -6,7 +6,7 @@ import {
   suggestTagsForContentAction,
 } from "@/ai/flows/generate-localized-content";
 
-import { generateDifferentiatedWorksheets } from "@/ai/flows/generate-differentiated-worksheets";
+import { generateHomework } from "@/ai/flows/generate-homework";
 import { answerTeachingQuestion } from "@/ai/flows/answer-teaching-question";
 import { generateAssessmentQuestions } from "@/ai/flows/generate-assessment-questions";
 import { createWeeklyLessonPlan } from "@/ai/flows/create-weekly-lesson-plan";
@@ -21,7 +21,7 @@ export {
   suggestTagsForContentAction,
 };
 
-export const generateDifferentiatedWorksheetsAction = generateDifferentiatedWorksheets;
+export const generateHomeworkAction = generateHomework;
 export const answerTeachingQuestionAction = answerTeachingQuestion;
 export const generateAssessmentQuestionsAction = generateAssessmentQuestions;
 export const createWeeklyLessonPlanAction = createWeeklyLessonPlan;

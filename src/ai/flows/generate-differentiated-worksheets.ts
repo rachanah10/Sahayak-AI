@@ -1,17 +1,17 @@
 'use server';
 
 /**
- * @fileOverview Differentiated worksheet generator from textbook image.
+ * @fileOverview Homework generator from textbook image.
  *
- * - generateDifferentiatedWorksheets - A function that generates differentiated worksheets.
- * - GenerateDifferentiatedWorksheetsInput - The input type for the generateDifferentiatedWorksheets function.
- * - GenerateDifferentiatedWorksheetsOutput - The return type for the generateDifferentiatedWorksheets function.
+ * - generateHomework - A function that generates differentiated worksheets.
+ * - GenerateHomeworkInput - The input type for the generateHomework function.
+ * - GenerateHomeworkOutput - The return type for the generateHomework function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateDifferentiatedWorksheetsInputSchema = z.object({
+const GenerateHomeworkInputSchema = z.object({
   textbookPageImage: z
     .string()
     .describe(
@@ -19,25 +19,25 @@ const GenerateDifferentiatedWorksheetsInputSchema = z.object({
     ),
   topic: z.string().describe('The topic of the textbook page.'),
 });
-export type GenerateDifferentiatedWorksheetsInput = z.infer<typeof GenerateDifferentiatedWorksheetsInputSchema>;
+export type GenerateHomeworkInput = z.infer<typeof GenerateHomeworkInputSchema>;
 
-const GenerateDifferentiatedWorksheetsOutputSchema = z.object({
+const GenerateHomeworkOutputSchema = z.object({
   easyWorksheet: z.string().describe('A worksheet for students who need more support.'),
   mediumWorksheet: z.string().describe('A worksheet for students who are at grade level.'),
   hardWorksheet: z.string().describe('A worksheet for students who need a challenge.'),
 });
-export type GenerateDifferentiatedWorksheetsOutput = z.infer<typeof GenerateDifferentiatedWorksheetsOutputSchema>;
+export type GenerateHomeworkOutput = z.infer<typeof GenerateHomeworkOutputSchema>;
 
-export async function generateDifferentiatedWorksheets(
-  input: GenerateDifferentiatedWorksheetsInput
-): Promise<GenerateDifferentiatedWorksheetsOutput> {
-  return generateDifferentiatedWorksheetsFlow(input);
+export async function generateHomework(
+  input: GenerateHomeworkInput
+): Promise<GenerateHomeworkOutput> {
+  return generateHomeworkFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'generateDifferentiatedWorksheetsPrompt',
-  input: {schema: GenerateDifferentiatedWorksheetsInputSchema},
-  output: {schema: GenerateDifferentiatedWorksheetsOutputSchema},
+  name: 'generateHomeworkPrompt',
+  input: {schema: GenerateHomeworkInputSchema},
+  output: {schema: GenerateHomeworkOutputSchema},
   prompt: `You are an expert teacher specializing in creating differentiated worksheets for students with different learning needs.
 
 You will use the following information to generate three worksheets: one easy, one medium, and one hard.
@@ -55,15 +55,15 @@ Hard Worksheet: A worksheet for students who need a challenge. The questions sho
 
 Format the worksheets as text.
 
-{{output schema=GenerateDifferentiatedWorksheetsOutputSchema}}
+{{output schema=GenerateHomeworkOutputSchema}}
 `,
 });
 
-const generateDifferentiatedWorksheetsFlow = ai.defineFlow(
+const generateHomeworkFlow = ai.defineFlow(
   {
-    name: 'generateDifferentiatedWorksheetsFlow',
-    inputSchema: GenerateDifferentiatedWorksheetsInputSchema,
-    outputSchema: GenerateDifferentiatedWorksheetsOutputSchema,
+    name: 'generateHomeworkFlow',
+    inputSchema: GenerateHomeworkInputSchema,
+    outputSchema: GenerateHomeworkOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);
