@@ -3,6 +3,8 @@
 import {
   generateLocalizedContent,
   type GenerateLocalizedContentInput,
+  suggestTagsForContent,
+  type SuggestTagsForContentInput,
 } from "@/ai/flows/generate-localized-content";
 import {
   generateDifferentiatedWorksheets,
@@ -34,6 +36,13 @@ export async function generateLocalizedContentAction(
 ) {
   return await generateLocalizedContent(input);
 }
+
+export async function suggestTagsForContentAction(
+  input: SuggestTagsForContentInput
+) {
+  return await suggestTagsForContent(input);
+}
+
 
 export async function generateDifferentiatedWorksheetsAction(
   input: GenerateDifferentiatedWorksheetsInput
