@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -28,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
@@ -135,6 +136,10 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Navigation Menu</SheetTitle>
+                    <SheetDescription>Main navigation links for the application.</SheetDescription>
+                </SheetHeader>
                 <div className="flex h-[60px] items-center border-b px-6">
                   <Link href="/" className="flex items-center gap-2 font-semibold">
                     <Logo className="h-6 w-6" />
