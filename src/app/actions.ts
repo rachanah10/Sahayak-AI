@@ -1,38 +1,28 @@
 "use server";
 
-export {
+import {
   generateLocalizedContentAction,
-  type GenerateLocalizedContentInput,
   suggestTagsForContentAction,
-  type SuggestTagsForContentInput,
 } from "@/ai/flows/generate-localized-content";
 
-export {
-  generateDifferentiatedWorksheets as generateDifferentiatedWorksheetsAction,
-  type GenerateDifferentiatedWorksheetsInput,
-} from "@/ai/flows/generate-differentiated-worksheets";
+import { generateDifferentiatedWorksheets } from "@/ai/flows/generate-differentiated-worksheets";
+import { answerTeachingQuestion } from "@/ai/flows/answer-teaching-question";
+import { generateAssessmentQuestions } from "@/ai/flows/generate-assessment-questions";
+import { createWeeklyLessonPlan } from "@/ai/flows/create-weekly-lesson-plan";
+import { generateVisualAidDiagram } from "@/ai/flows/generate-visual-aid-diagram";
+import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
+
+// Re-exporting the functions to be used as server actions
+// This is the correct pattern for "use server" files.
 
 export {
-  answerTeachingQuestion as answerTeachingQuestionAction,
-  type AnswerTeachingQuestionInput,
-} from "@/ai/flows/answer-teaching-question";
+  generateLocalizedContentAction,
+  suggestTagsForContentAction,
+};
 
-export {
-  generateAssessmentQuestions as generateAssessmentQuestionsAction,
-  type GenerateAssessmentQuestionsInput,
-} from "@/ai/flows/generate-assessment-questions";
-
-export {
-  createWeeklyLessonPlan as createWeeklyLessonPlanAction,
-  type CreateWeeklyLessonPlanInput,
-} from "@/ai/flows/create-weekly-lesson-plan";
-
-export {
-  generateVisualAidDiagram as generateVisualAidDiagramAction,
-  type GenerateVisualAidDiagramInput,
-} from "@/ai/flows/generate-visual-aid-diagram";
-
-export {
-  suggestFollowUpContent as suggestFollowUpContentAction,
-  type SuggestFollowUpContentInput,
-} from "@/ai/flows/suggest-follow-up-content";
+export const generateDifferentiatedWorksheetsAction = generateDifferentiatedWorksheets;
+export const answerTeachingQuestionAction = answerTeachingQuestion;
+export const generateAssessmentQuestionsAction = generateAssessmentQuestions;
+export const createWeeklyLessonPlanAction = createWeeklyLessonPlan;
+export const generateVisualAidDiagramAction = generateVisualAidDiagram;
+export const suggestFollowUpContentAction = suggestFollowUpContent;

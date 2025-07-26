@@ -21,6 +21,7 @@ import { createWeeklyLessonPlanAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { CalendarDays } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import type { CreateWeeklyLessonPlanInput } from "@/ai/flows/create-weekly-lesson-plan";
 
 const schema = z.object({
   gradeLevel: z.string().min(1, "Please enter a grade level."),

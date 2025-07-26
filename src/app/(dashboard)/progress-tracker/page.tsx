@@ -27,6 +27,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import type { Student } from "@/lib/types";
+import type { SuggestFollowUpContentInput } from "@/ai/flows/suggest-follow-up-content";
 
 const mockStudents: Student[] = [
   { id: 1, name: "Aarav Sharma", skillLevel: "Beginner", topic: "Reading", performance: "" },

@@ -22,7 +22,7 @@ import { generateAssessmentQuestionsAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { ClipboardCheck } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import type { GenerateAssessmentQuestionsOutput } from "@/ai/flows/generate-assessment-questions";
+import type { GenerateAssessmentQuestionsOutput, GenerateAssessmentQuestionsInput } from "@/ai/flows/generate-assessment-questions";
 
 const schema = z.object({
   topic: z.string().min(3, "Please enter a topic."),
@@ -55,7 +55,7 @@ export default function AssessmentGeneratorPage() {
     setIsLoading(true);
     setQuestions(null);
     try {
-      const result = await generateAssessmentQuestionsAction(data);
+      const result = await generateAssessmentQuestionsAction(data as GenerateAssessmentQuestionsInput);
       setQuestions(result);
     } catch (error) {
       console.error(error);

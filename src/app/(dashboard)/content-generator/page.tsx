@@ -31,7 +31,7 @@ import { generateLocalizedContentAction, suggestTagsForContentAction } from "@/a
 import { PageHeader } from "@/components/page-header";
 import { BookOpen, Lightbulb } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import type { GenerateLocalizedContentOutput } from "@/ai/flows/generate-localized-content";
+import type { GenerateLocalizedContentOutput, GenerateLocalizedContentInput } from "@/ai/flows/generate-localized-content";
 
 const schema = z.object({
   prompt: z.string().min(10, "Please enter a prompt of at least 10 characters."),
@@ -62,6 +62,7 @@ export default function ContentGeneratorPage() {
     control,
     watch,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
@@ -164,7 +165,7 @@ export default function ContentGeneratorPage() {
                 </div>
                 <div className="space-y-2">
                     <Label>Language</Label>
-                    <Select onValueChange={(value) => control._formValues.language = value} defaultValue={formValues.language}>
+                    <Select onValueChange={(value) => setValue("language", value)} defaultValue={formValues.language}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="English">English</SelectItem>
@@ -177,11 +178,11 @@ export default function ContentGeneratorPage() {
               </div>
               <div className="grid grid-cols-2 gap-4 pt-2">
                   <div className="flex items-center space-x-2">
-                      <Switch id="generateContent" {...register("generateContent")} checked={formValues.generateContent} onCheckedChange={(c) => control._formValues.generateContent = c} />
+                      <Switch id="generateContent" {...register("generateContent")} checked={formValues.generateContent} onCheckedChange={(c) => setValue("generateContent", c)} />
                       <Label htmlFor="generateContent">Generate Content?</Label>
                   </div>
                    <div className="flex items-center space-x-2">
-                      <Switch id="generateImage" {...register("generateImage")} checked={formValues.generateImage} onCheckedChange={(c) => control._formValues.generateImage = c}/>
+                      <Switch id="generateImage" {...register("generateImage")} checked={formValues.generateImage} onCheckedChange={(c) => setValue("generateImage", c)}/>
                       <Label htmlFor="generateImage">Generate Image?</Label>
                   </div>
               </div>

@@ -15,6 +15,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import type { AnswerTeachingQuestionInput } from "@/ai/flows/answer-teaching-question";
 
 const schema = z.object({
   question: z.string().min(5, "Please enter a question."),

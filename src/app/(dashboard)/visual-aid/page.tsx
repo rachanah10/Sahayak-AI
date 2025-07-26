@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/page-header";
 import { Image as ImageIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Label } from "@/components/ui/label";
+import type { GenerateVisualAidDiagramInput } from "@/ai/flows/generate-visual-aid-diagram";
 
 const schema = z.object({
   description: z.string().min(10, "Please describe the diagram in at least 10 characters."),
