@@ -12,12 +12,15 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateHomeworkInputSchema = z.object({
+  topic: z.string().describe('The topic of the textbook page.'),
+  grade: z.string().describe('The grade level for the students.'),
+  language: z.string().describe('The language for the worksheet.'),
   textbookPageImage: z
     .string()
+    .optional()
     .describe(
       "A photo of a textbook page, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  topic: z.string().describe('The topic of the textbook page.'),
 });
 export type GenerateHomeworkInput = z.infer<typeof GenerateHomeworkInputSchema>;
 
@@ -40,12 +43,20 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateHomeworkOutputSchema},
   prompt: `You are an expert teacher specializing in creating differentiated worksheets for students with different learning needs.
 
-You will use the following information to generate three worksheets: one easy, one medium, and one hard.
+You will use the following information to generate three worksheets in the specified language: one easy, one medium, and one hard.
 
 Topic: {{{topic}}}
+Grade: {{{grade}}}
+Language: {{{language}}}
+{{#if textbookPageImage}}
 Textbook Page Image: {{media url=textbookPageImage}}
+Base the worksheets on the content of this image and the topic.
+{{else}}
+Base the worksheets on the topic alone.
+{{/if}}
 
-Generate three worksheets, one for each difficulty level. The worksheets should be tailored to the content of the textbook page image, and the topic.
+
+Generate three worksheets, one for each difficulty level, tailored to the grade level and language.
 
 Easy Worksheet: A worksheet for students who need more support. The questions should be simple and straightforward.
 
@@ -53,9 +64,7 @@ Medium Worksheet: A worksheet for students who are at grade level. The questions
 
 Hard Worksheet: A worksheet for students who need a challenge. The questions should be the most challenging, and should require students to think critically about the material.
 
-Format the worksheets as text.
-
-{{output schema=GenerateHomeworkOutputSchema}}
+Format the worksheets as text in {{{language}}}.
 `,
 });
 

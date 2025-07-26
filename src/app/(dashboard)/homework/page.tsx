@@ -22,20 +22,44 @@ import { NotebookTabs } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { GenerateHomeworkOutput, GenerateHomeworkInput } from "@/ai/flows/generate-homework";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const schema = z.object({
   topic: z.string().min(3, "Please enter a topic."),
+  grade: z.string().min(1, "Please select a grade."),
+  language: z.string().min(1, "Please select a language."),
+  useImage: z.boolean(),
   image: z
     .any()
-    .refine((files) => files?.length == 1, "Image is required.")
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
-    .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      ".jpg, .jpeg, .png and .webp files are accepted."
-    ),
+    .optional()
+}).refine(data => {
+    if (data.useImage) {
+        return data.image?.length > 0;
+    }
+    return true;
+}, {
+    message: "Image is required when the checkbox is selected.",
+    path: ["image"],
+}).refine(data => {
+    if (data.useImage && data.image?.length > 0) {
+        return data.image?.[0]?.size <= MAX_FILE_SIZE;
+    }
+    return true;
+}, {
+    message: `Max file size is 5MB.`,
+    path: ["image"],
+}).refine(data => {
+    if (data.useImage && data.image?.length > 0) {
+        return ACCEPTED_IMAGE_TYPES.includes(data.image?.[0]?.type);
+    }
+    return true;
+}, {
+    message: ".jpg, .jpeg, .png and .webp files are accepted.",
+    path: ["image"],
 });
 
 type FormFields = z.infer<typeof schema>;
@@ -48,10 +72,21 @@ export default function HomeworkPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      topic: "",
+      grade: "4th Grade",
+      language: "English",
+      useImage: false,
+    },
   });
+
+  const useImage = watch("useImage");
+  const formValues = watch();
 
   const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -66,11 +101,19 @@ export default function HomeworkPage() {
     setIsLoading(true);
     setWorksheets(null);
     try {
-      const textbookPageImage = await fileToDataUri(data.image[0]);
-      const result = await generateHomeworkAction({
+      let textbookPageImage: string | undefined = undefined;
+      if (data.useImage && data.image && data.image.length > 0) {
+        textbookPageImage = await fileToDataUri(data.image[0]);
+      }
+      
+      const payload: GenerateHomeworkInput = {
         topic: data.topic,
-        textbookPageImage,
-      });
+        grade: data.grade,
+        language: data.language,
+        textbookPageImage: textbookPageImage,
+      };
+
+      const result = await generateHomeworkAction(payload);
       setWorksheets(result);
     } catch (error) {
       console.error(error);
@@ -89,26 +132,62 @@ export default function HomeworkPage() {
       <div className="flex flex-col gap-8">
         <PageHeader
           title="Homework Generator"
-          description="Upload a textbook page image to generate worksheets for different learning levels."
+          description="Generate worksheets for different learning levels based on topic, grade, and language."
           Icon={NotebookTabs}
         />
         <Card>
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardHeader>
               <CardTitle>Homework Details</CardTitle>
-              <CardDescription>Provide a topic and a textbook image.</CardDescription>
+              <CardDescription>Provide a topic, grade, language, and optional textbook image.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="topic">Topic</Label>
+                <Label htmlFor="topic">Topic *</Label>
                 <Input id="topic" placeholder="e.g., Photosynthesis" {...register("topic")} />
                 {errors.topic && <p className="text-sm text-destructive">{errors.topic.message}</p>}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="image">Textbook Page Image</Label>
-                <Input id="image" type="file" {...register("image")} accept={ACCEPTED_IMAGE_TYPES.join(",")} />
-                {errors.image && <p className="text-sm text-destructive">{errors.image.message?.toString()}</p>}
+
+               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="grade">Grade *</Label>
+                    <Select onValueChange={(value) => setValue("grade", value)} defaultValue={formValues.grade}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {Array.from({length: 10}, (_, i) => `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade`).map(grade => (
+                                <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {errors.grade && <p className="text-sm text-destructive">{errors.grade.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label>Language *</Label>
+                    <Select onValueChange={(value) => setValue("language", value)} defaultValue={formValues.language}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="English">English</SelectItem>
+                            <SelectItem value="Hindi">Hindi</SelectItem>
+                            <SelectItem value="Bengali">Bengali</SelectItem>
+                            <SelectItem value="Tamil">Tamil</SelectItem>
+                        </SelectContent>
+                    </Select>
+                     {errors.language && <p className="text-sm text-destructive">{errors.language.message}</p>}
+                </div>
               </div>
+              
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox id="useImage" {...register("useImage")} checked={useImage} onCheckedChange={(c) => setValue("useImage", !!c)} />
+                <Label htmlFor="useImage">Base questions on uploaded content</Label>
+              </div>
+
+              {useImage && (
+                <div className="space-y-2">
+                  <Label htmlFor="image">Textbook Page Image *</Label>
+                  <Input id="image" type="file" {...register("image")} accept={ACCEPTED_IMAGE_TYPES.join(",")} />
+                  {errors.image && <p className="text-sm text-destructive">{errors.image.message?.toString()}</p>}
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoading}>
