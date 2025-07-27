@@ -62,12 +62,6 @@ const features = [
     Icon: CalendarDays,
   },
   {
-    title: "Visual Aid Generator",
-    description: "Generate blackboard-friendly diagrams from text.",
-    href: "/visual-aid",
-    Icon: ImageIcon,
-  },
-  {
     title: "Progress Tracker",
     description: "Log student skill levels and get AI-powered suggestions.",
     href: "/progress-tracker",

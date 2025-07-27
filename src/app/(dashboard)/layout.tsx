@@ -47,7 +47,6 @@ const menuItems = [
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck },
   { href: "/view-assessments", label: "View Assessments", Icon: Users },
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays },
-  { href: "/visual-aid", label: "Visual Aid Generator", Icon: ImageIcon },
   { href: "/progress-tracker", label: "Progress Tracker", Icon: Users },
 ];
 
