@@ -75,6 +75,13 @@ const allFeatures: Feature[] = [
     Icon: ClipboardCheck,
     roles: ['teacher', 'admin'],
   },
+   {
+    title: "View Assessments",
+    description: "Review and take assigned assessments.",
+    href: "/view-assessments",
+    Icon: ClipboardCheck,
+    roles: ['teacher', 'student', 'admin'],
+  },
   {
     title: "Lesson Planner",
     description: "Craft weekly lesson plans based on syllabus and grade.",
