@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,7 +30,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { generateAssessmentQuestionsAction, saveAssessmentAction, suggestAssessmentTagsAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { ClipboardCheck, CalendarIcon, Key, FileText, CheckCircle, Save, Lightbulb } from "lucide-react";
+import { ClipboardCheck, CalendarIcon, FileText, CheckCircle, Save, Lightbulb } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type { GenerateAssessmentQuestionsOutput, Question } from "@/ai/flows/generate-assessment-questions";
@@ -48,7 +48,7 @@ const schema = z.object({
   subject: z.string().optional(),
   topic: z.string().optional(),
   grade: z.string().min(1, "Please select a grade."),
-  numQuestions: z.coerce.number().min(1, "At least 1 question is required.").max(10, "Maximum 10 questions per level."),
+  numQuestions: z.coerce.number().min(1, "At least 1 question is required.").max(50, "Maximum 50 questions."),
   questionType: z.enum(['Multiple Choice', 'Fill in the Blanks', 'Short Answer', 'Mix']),
   timer: z.coerce.number().optional(),
   deadline: z.date().optional(),
@@ -110,7 +110,7 @@ export default function AssessmentGeneratorPage() {
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
     defaultValues: {
-      numQuestions: 5,
+      numQuestions: 10,
       questionType: "Mix",
       grade: "4th Grade",
       inputType: "topic",
@@ -249,7 +249,7 @@ export default function AssessmentGeneratorPage() {
             topic: topicToSave,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
             questions: editedAssessment.questions,
-        }, user.uid);
+        });
         toast({
             title: "Test Saved & Published!",
             description: "The assessment has been saved and is available for students."
@@ -266,16 +266,6 @@ export default function AssessmentGeneratorPage() {
         setIsSaving(false);
     }
   }
-
-  const questionsByDifficulty = useMemo(() => {
-    if (!editedAssessment) return { Easy: [], Medium: [], Hard: [] };
-    return editedAssessment.questions.reduce((acc, q, index) => {
-        // @ts-ignore
-        (acc[q.difficulty] = acc[q.difficulty] || []).push({ ...q, originalIndex: index });
-        return acc;
-    }, {} as Record<string, (Question & { originalIndex: number })[]>);
-  }, [editedAssessment]);
-
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -357,7 +347,7 @@ export default function AssessmentGeneratorPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="numQuestions">Questions per Level *</Label>
+                    <Label htmlFor="numQuestions">Total Number of Questions *</Label>
                     <Input id="numQuestions" type="number" {...register("numQuestions")} />
                     {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
                 </div>
@@ -464,43 +454,35 @@ export default function AssessmentGeneratorPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="Easy" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="Easy">Easy</TabsTrigger>
-                  <TabsTrigger value="Medium">Medium</TabsTrigger>
-                  <TabsTrigger value="Hard">Hard</TabsTrigger>
-                </TabsList>
-                {(['Easy', 'Medium', 'Hard'] as const).map(difficulty => (
-                  <TabsContent value={difficulty} key={difficulty}>
-                    <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
-                      {questionsByDifficulty[difficulty]?.map((q, i) => (
-                        <div key={q.originalIndex} className="p-4 border rounded-lg space-y-2">
-                           <Label htmlFor={`q-text-${q.originalIndex}`} className="font-semibold">Question {i + 1}</Label>
-                           <Textarea
-                                id={`q-text-${q.originalIndex}`}
-                                value={q.text}
-                                onChange={(e) => handleQuestionChange(q.originalIndex, 'text', e.target.value)}
-                                className="text-base"
-                            />
-
-                           <Label htmlFor={`q-ans-${q.originalIndex}`} className="font-semibold text-primary">Answer</Label>
-                           <Textarea
-                                id={`q-ans-${q.originalIndex}`}
-                                value={q.answer}
-                                onChange={(e) => handleQuestionChange(q.originalIndex, 'answer', e.target.value)}
-                                className="text-base"
-                           />
-                           <div className="flex flex-wrap gap-2 pt-1">
-                                {q.tags.map(tag => (
-                                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                                ))}
-                            </div>
-                        </div>
-                      ))}
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+                {editedAssessment.questions.map((q, index) => (
+                  <div key={index} className="p-4 border rounded-lg space-y-2">
+                    <div className="flex justify-between items-center">
+                        <Label htmlFor={`q-text-${index}`} className="font-semibold">Question {index + 1}</Label>
+                        <Badge variant="secondary">Difficulty: {q.difficulty}/5</Badge>
                     </div>
-                  </TabsContent>
+                    <Textarea
+                        id={`q-text-${index}`}
+                        value={q.text}
+                        onChange={(e) => handleQuestionChange(index, 'text', e.target.value)}
+                        className="text-base"
+                    />
+
+                    <Label htmlFor={`q-ans-${index}`} className="font-semibold text-primary">Answer</Label>
+                    <Textarea
+                        id={`q-ans-${index}`}
+                        value={q.answer}
+                        onChange={(e) => handleQuestionChange(index, 'answer', e.target.value)}
+                        className="text-base"
+                    />
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        {q.tags.map(tag => (
+                            <Badge key={tag} variant="outline">{tag}</Badge>
+                        ))}
+                    </div>
+                  </div>
                 ))}
-              </Tabs>
+              </div>
             </CardContent>
           </Card>
         )}

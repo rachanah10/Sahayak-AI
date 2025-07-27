@@ -5,7 +5,7 @@ const QuestionSchema = z.object({
     no: z.string(),
     text: z.string(),
     answer: z.string(),
-    difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+    difficulty: z.number().min(1).max(5),
     tags: z.array(z.string()),
 });
 
