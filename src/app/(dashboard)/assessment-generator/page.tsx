@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -33,6 +32,7 @@ import { ClipboardCheck, CalendarIcon, Key, FileText, CheckCircle, Save } from "
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type { GenerateAssessmentQuestionsOutput, GenerateAssessmentQuestionsInput } from "@/ai/flows/generate-assessment-questions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const schema = z.object({
   subject: z.string().min(2, "Please enter a subject."),
@@ -110,7 +110,8 @@ export default function AssessmentGeneratorPage() {
             ...formValues,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
             testContent: assessment.testContent,
-            answerKey: assessment.answerKey
+            answerKey: assessment.answerKey,
+            numQuestions: Number(formValues.numQuestions), // ensure numQuestions is a number
         })
         toast({
             title: "Test Saved!",
@@ -212,7 +213,7 @@ export default function AssessmentGeneratorPage() {
                             <Calendar
                             mode="single"
                             selected={formValues.deadline}
-                            onSelect={(date) => setValue("deadline", date)}
+                            onSelect={(date) => setValue("deadline", date || new Date())}
                             initialFocus
                             />
                         </PopoverContent>
@@ -257,7 +258,7 @@ export default function AssessmentGeneratorPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="test">
+                    <Tabs defaultValue="test" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="test"><FileText className="mr-2 h-4 w-4" /> Test</TabsTrigger>
                             <TabsTrigger value="key"><Key className="mr-2 h-4 w-4"/>Answer Key</TabsTrigger>
