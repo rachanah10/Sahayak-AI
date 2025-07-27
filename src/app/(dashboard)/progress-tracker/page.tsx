@@ -62,7 +62,7 @@ interface StudentPerformance {
 const mockStudentData: StudentPerformance[] = [
   {
     id: 1,
-    uid: "student1_uid",
+    uid: "erYvJ848w6hSFjvPBfOA5zwqLK72",
     name: "Aarav Sharma",
     performance: { math: 85, science: 92, reading: 78, writing: 81, history: 88 },
     assessments: [
@@ -72,7 +72,7 @@ const mockStudentData: StudentPerformance[] = [
   },
   {
     id: 2,
-    uid: "student2_uid",
+    uid: "erYvJ844w6uSFjvPBfOA5zwqLK72",
     name: "Priya Patel",
     performance: { math: 95, science: 88, reading: 91, writing: 94, history: 85 },
     assessments: [
@@ -81,8 +81,8 @@ const mockStudentData: StudentPerformance[] = [
   },
   {
     id: 3,
-    uid: "student3_uid",
-    name: "Rohan Das",
+    uid: "erYvJ844w6hSFjvPBfOA5zwqLK72",
+    name: "Lazy Student",
     performance: { math: 72, science: 65, reading: 80, writing: 75, history: 78 },
     assessments: [
       { id: "rd1", topic: "Grammar and Punctuation", score: 78, date: "2024-05-13" },
