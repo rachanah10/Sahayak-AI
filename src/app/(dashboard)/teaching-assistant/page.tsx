@@ -174,30 +174,6 @@ export default function TeachingAssistantPage() {
                 description="Ask teaching-related questions and get immediate, helpful answers."
                 Icon={MessageSquare}
             />
-             <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <PlusCircle className="w-6 h-6" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add Context</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <Button variant="outline">
-                            <Upload className="mr-2 h-5 w-5" />
-                            Upload Media
-                        </Button>
-                        <Button asChild variant="outline">
-                            <Link href="/content-library">
-                                <Book className="mr-2 h-5 w-5" />
-                                Choose from Library
-                            </Link>
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
       <div className="flex-1 flex flex-col gap-4 overflow-hidden">
         <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
@@ -234,6 +210,30 @@ export default function TeachingAssistantPage() {
         <Separator />
         <div className="py-4">
           <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2">
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <PlusCircle className="w-6 h-6" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add Context</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <Button variant="outline">
+                            <Upload className="mr-2 h-5 w-5" />
+                            Upload Media
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/content-library">
+                                <Book className="mr-2 h-5 w-5" />
+                                Choose from Library
+                            </Link>
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
             <div className="relative flex-grow">
                  <Input
                     id="question"
