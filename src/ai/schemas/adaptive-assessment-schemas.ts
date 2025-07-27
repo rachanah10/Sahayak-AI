@@ -8,6 +8,7 @@ export const QuestionSchema = z.object({
     options: z.array(z.string()).optional().describe("A list of options for multiple choice questions."),
     difficulty: z.number().min(1).max(5).describe("Difficulty rating from 1 (easiest) to 5 (hardest)."),
     tags: z.array(z.string()).describe("Relevant tags for the question."),
+    questionType: z.string().describe("The type of the question, e.g., 'Multiple Choice'."),
 });
 export type Question = z.infer<typeof QuestionSchema>;
 

@@ -46,7 +46,7 @@ const prompt = ai.definePrompt({
       a.  Analyze the student's performance on the answered questions. Pay attention to the difficulty of the questions they got right or wrong.
       b.  Select the **best next question** from the 'allQuestions' list that has NOT already been answered. Do not repeat questions.
       c.  The ideal next question should challenge the student appropriately. If they are doing well (especially on hard questions), select a slightly harder question. If they are struggling (especially on easy questions), select an easier one. Try to vary the difficulty to get a good sense of their ability.
-      d.  Return **only** the 'nextQuestion'. Do not return 'isComplete' or 'finalScore'.
+      d.  Return **only** the 'nextQuestion'. The nextQuestion object MUST include all its original fields (no, text, answer, options, difficulty, tags). Do not return 'isComplete' or 'finalScore'.
 
   3.  **If the test IS complete:**
       a.  Calculate a 'finalScore'. This score should be out of 100. It must be weighted based on the difficulty of the questions the student answered correctly. A correct answer on a difficulty 5 question is worth more than a correct answer on a difficulty 1 question.

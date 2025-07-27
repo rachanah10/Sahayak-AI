@@ -161,7 +161,7 @@ const prompt = ai.definePrompt({
   Instructions:
   1. Generate exactly {{numQuestions}} questions in total.
   2. For each question, provide all the fields specified in the output schema.
-  3. **For 'Multiple Choice' questions, you MUST populate the 'options' array with 4 plausible options.** One of these options must be the correct answer. For all other question types, the 'options' field should be omitted.
+  3. **For 'Multiple Choice' questions, you MUST populate the 'options' array with 4 plausible options.** One of these options must be the correct answer. For all other question types, the 'options' field should be omitted or null.
   4. The 'difficulty' field must be a number between 1 and 5. Ensure there is a good mix of difficulties (e.g., some 1s, some 2s, up to 5) across all generated questions.
   5. **For each question, you MUST specify the 'questionType' field as 'Multiple Choice', 'Fill in the Blanks', or 'Short Answer'.** If the user requests 'Mix', generate a variety of types.
   6. The 'no' field should be a string representing the question number (e.g., "1", "2", ...).
