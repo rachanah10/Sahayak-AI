@@ -75,7 +75,7 @@ export default function ViewAssessmentsPage() {
       setIsLoading(true);
       try {
         let q;
-        if (user.role === 'student') {
+        if (user.role === 'student' && user.grade) {
             q = query(
               collection(db, "assessments"),
               where("grade", "==", user.grade)
