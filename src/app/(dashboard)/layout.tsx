@@ -35,7 +35,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
-import React from "react";
+import React, { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +57,7 @@ const adminMenuItems = [
 ];
 
 
-function SidebarNav({ user }: { user: any }) {
+function SidebarNav({ user, onLinkClick }: { user: any, onLinkClick?: () => void }) {
   const pathname = usePathname();
   const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
 
@@ -69,6 +69,7 @@ function SidebarNav({ user }: { user: any }) {
           <Link
             key={label}
             href={href}
+            onClick={onLinkClick}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
               isActive && "bg-muted text-primary"
@@ -91,6 +92,7 @@ export default function DashboardLayout({
 }) {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   React.useEffect(() => {
     if (!loading && !user) {
@@ -110,6 +112,8 @@ export default function DashboardLayout({
         </div>
     )
   }
+  
+  const closeSheet = () => setIsSheetOpen(false);
 
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
@@ -128,7 +132,7 @@ export default function DashboardLayout({
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-muted/40 px-6">
-           <Sheet>
+           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
@@ -148,7 +152,7 @@ export default function DashboardLayout({
                     <span>Sahayak</span>
                   </Link>
                 </SheetHeader>
-                <SidebarNav user={user} />
+                <SidebarNav user={user} onLinkClick={closeSheet} />
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
