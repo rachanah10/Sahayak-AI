@@ -25,15 +25,17 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { generateRevisionQuestionsAction } from "@/app/actions";
+import { generateRevisionQuestionsAction, gradeAnswerAction, saveStudentAssessmentAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { BookCheck, ArrowRight } from "lucide-react";
+import { BookCheck, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Question } from "@/ai/flows/generate-assessment-questions";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import type { AnsweredQuestion } from "@/ai/schemas/adaptive-assessment-schemas";
 
 const schema = z.object({
   topic: z.string().min(1, "Please select a topic."),
@@ -43,11 +45,19 @@ const schema = z.object({
 
 type FormFields = z.infer<typeof schema>;
 
+interface GradedAnswer extends Question {
+    studentAnswer: string;
+    isCorrect: boolean;
+}
+
 export default function RevisionPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableTopics, setAvailableTopics] = useState<string[]>([]);
   const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
+  const [gradedAnswers, setGradedAnswers] = useState<GradedAnswer[] | null>(null);
 
   const { toast } = useToast();
 
@@ -97,6 +107,8 @@ export default function RevisionPage() {
     }
     setIsLoading(true);
     setQuestions(null);
+    setGradedAnswers(null);
+    setStudentAnswers({});
     try {
       const result = await generateRevisionQuestionsAction({
           ...data,
@@ -112,6 +124,52 @@ export default function RevisionPage() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAnswerChange = (questionNo: string, answer: string) => {
+    setStudentAnswers(prev => ({ ...prev, [questionNo]: answer }));
+  };
+
+  const handleSubmitAnswers = async () => {
+    if (!questions || !user) return;
+    setIsSubmitting(true);
+    
+    try {
+        const graded: GradedAnswer[] = [];
+        for (const q of questions) {
+            const studentAnswer = studentAnswers[q.no] || "";
+            const result = await gradeAnswerAction({
+                questionText: q.text,
+                correctAnswer: q.answer,
+                studentAnswer: studentAnswer,
+            });
+            graded.push({ ...q, studentAnswer, isCorrect: result.isCorrect });
+        }
+        setGradedAnswers(graded);
+
+        // Save the revision attempt
+        const correctCount = graded.filter(a => a.isCorrect).length;
+        const score = (correctCount / questions.length) * 100;
+
+        await saveStudentAssessmentAction({
+            studentId: user.uid,
+            assessmentId: `revision-${Date.now()}`,
+            assessmentTopic: formValues.topic,
+            timeTaken: 0, // Not tracking time for revisions yet
+            adaptiveScore: score,
+            questionsAttempted: graded.map(g => ({
+                ...g,
+            })),
+        });
+
+        toast({ title: "Revision Submitted!", description: "Your progress has been saved." });
+
+    } catch (error) {
+        console.error(error);
+        toast({ variant: "destructive", title: "Error", description: "Could not submit your answers." });
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -167,7 +225,7 @@ export default function RevisionPage() {
             <CardFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Spinner className="mr-2" />}
-                Generate Questions
+                {gradedAnswers ? "Start New Revision" : "Generate Questions"}
               </Button>
             </CardFooter>
           </form>
@@ -183,14 +241,15 @@ export default function RevisionPage() {
                 </div>
             </Card>
         )}
-        {questions && (
+        {questions && !gradedAnswers && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Revision Sheet</CardTitle>
                 <CardDescription>Topic: {formValues.topic}</CardDescription>
               </div>
-               <Button disabled>
+               <Button onClick={handleSubmitAnswers} disabled={isSubmitting}>
+                 {isSubmitting ? <Spinner className="mr-2" /> : null}
                  Submit Answers <ArrowRight className="ml-2" />
                </Button>
             </CardHeader>
@@ -207,6 +266,8 @@ export default function RevisionPage() {
                         id={`q-ans-${index}`}
                         placeholder="Your answer..."
                         className="text-base bg-background"
+                        value={studentAnswers[q.no] || ""}
+                        onChange={(e) => handleAnswerChange(q.no, e.target.value)}
                     />
                   </div>
                 ))}
@@ -214,7 +275,35 @@ export default function RevisionPage() {
             </CardContent>
           </Card>
         )}
-         {!isLoading && !questions && (
+         {gradedAnswers && (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Answer Key</CardTitle>
+                    <CardDescription>Review your answers below. This has been saved to your progress.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+                        {gradedAnswers.map((q, index) => (
+                            <div key={index} className="p-4 border rounded-lg space-y-3">
+                                <p className="font-semibold">{index+1}. {q.text}</p>
+                                <div className={cn("text-sm p-2 rounded-md flex items-start gap-2", q.isCorrect ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50')}>
+                                    {q.isCorrect ? <CheckCircle className="text-green-600 mt-0.5 h-4 w-4" /> : <XCircle className="text-red-600 mt-0.5 h-4 w-4" />}
+                                    <div>
+                                        <span className="font-bold">Your Answer: </span> {q.studentAnswer || <span className="italic">No answer provided</span>}
+                                    </div>
+                                </div>
+                                {!q.isCorrect && (
+                                     <div className="text-sm p-2 rounded-md bg-blue-100 dark:bg-blue-900/50">
+                                         <span className="font-bold">Correct Answer: </span> {q.answer}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+         )}
+         {!isLoading && !questions && !gradedAnswers && (
             <Card className="min-h-[400px] flex justify-center items-center">
                 <div className="text-center space-y-2">
                     <p className="text-muted-foreground">Your questions will appear here.</p>
