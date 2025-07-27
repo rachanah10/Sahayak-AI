@@ -110,6 +110,31 @@ const generateContentFinalPrompt = ai.definePrompt({
   `,
 });
 
+const imagePromptGenerator = ai.definePrompt({
+  name: 'imagePromptGenerator',
+  input: { schema: GenerateLocalizedContentInputSchema },
+  output: { schema: z.object({ imagePrompt: z.string() }) },
+  prompt: `You are an AI assistant that creates optimal image generation prompts for a teacher's classroom.
+  Based on the user's request, generate a detailed, descriptive prompt for a text-to-image model.
+  This prompt should result in a simple, blackboard-friendly, hand-drawn style diagram suitable for the specified grade level.
+  The prompt should be in English.
+
+  User's Request:
+  - Story Idea: "{{{prompt}}}"
+  {{#if localizationDetails}}
+  - Localization Focus: "{{{localizationDetails}}}"
+  {{/if}}
+  - Grade Level: {{{grade}}}
+  {{#if tags}}
+  - Additional Context Tags: {{#each tags}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+  {{/if}}
+
+  Create a single, clear, and descriptive image generation prompt based on this information.
+  For example, if the story is about "a clever fox outsmarting a tiger in a forest", a good prompt would be:
+  "A simple, hand-drawn style, blackboard-friendly diagram showing a small, clever red fox looking proud, and a large, frustrated tiger looking away. The scene is a simple forest with a few trees and bushes. The style should be clear and easy for young children to understand."
+  `,
+});
+
 
 const generateLocalizedContentFlow = ai.defineFlow(
   {
@@ -126,12 +151,18 @@ const generateLocalizedContentFlow = ai.defineFlow(
     }
 
     if (input.generateImage) {
-      const imageGenPrompt = `A simple, blackboard-friendly, hand-drawn style diagram for a story about: "${input.prompt}". Localization focus: ${input.localizationDetails}. Grade: ${input.grade}.`;
-      imagePromise = ai.generate({
-        model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: imageGenPrompt,
-        config: { responseModalities: ['TEXT', 'IMAGE'] },
-      }).then(response => response.media?.url);
+      // 1. Generate the optimal image prompt
+      const { output } = await imagePromptGenerator(input);
+      const imageGenPrompt = output?.imagePrompt;
+      
+      // 2. Use the generated prompt to create the image
+      if (imageGenPrompt) {
+          imagePromise = ai.generate({
+            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+            prompt: imageGenPrompt,
+            config: { responseModalities: ['TEXT', 'IMAGE'] },
+          }).then(response => response.media?.url);
+      }
     }
     
     const [localizedStory, diagramDataUri] = await Promise.all([storyPromise, imagePromise]);
