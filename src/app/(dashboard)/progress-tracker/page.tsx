@@ -123,7 +123,7 @@ const NewRemarkFormSchema = z.object({
 });
 type NewRemarkFormFields = z.infer<typeof NewRemarkFormSchema>;
 
-function StudentProfileDialog({ student }: { student: StudentPerformance | null }) {
+function StudentProfileDialog({ student }: { student: StudentPerformance }) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -296,6 +296,7 @@ export default function ProgressTrackerPage() {
     if (user?.role === "student") {
       const studentData = mockStudentData.find(s => s.uid === user.uid) || mockStudentData[0];
       setStudents([studentData]);
+      setSelectedStudent(studentData);
     }
   }, [user]);
 
@@ -333,8 +334,12 @@ export default function ProgressTrackerPage() {
 
   const uniqueGrades = useMemo(() => ["all", ...Array.from(new Set(mockStudentData.map(s => s.grade)))], []);
 
-  if (user?.role === 'student') {
-      return <StudentProfileDialog student={students[0]} />;
+  if (user?.role === 'student' && selectedStudent) {
+      return (
+        <Dialog open={true} onOpenChange={() => {}}>
+            <StudentProfileDialog student={selectedStudent} />
+        </Dialog>
+      );
   }
 
   return (
@@ -409,3 +414,4 @@ export default function ProgressTrackerPage() {
     </div>
   );
 }
+
