@@ -216,7 +216,7 @@ export default function AssessmentGeneratorPage() {
   };
   
   const handlePublish = async () => {
-    if(!assessment || !formValues.topic || !formValues.subject) return;
+    if(!assessment || !formValues.topic || !formValues.subject || !user) return;
     setIsSaving(true);
     try {
         await saveAssessmentAction({
@@ -225,7 +225,7 @@ export default function AssessmentGeneratorPage() {
             topic: formValues.topic,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
             questions: assessment.questions,
-        })
+        }, user.uid)
         toast({
             title: "Test Saved & Published!",
             description: "The assessment has been saved and is available for students."

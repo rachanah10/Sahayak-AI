@@ -14,19 +14,6 @@ import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/ai/
 import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
 import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 import { saveAssessment } from "@/ai/flows/save-assessment";
-import { getAuth } from "firebase-admin/auth";
-import { initAdmin } from "@/lib/firebase-admin";
-import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
-import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
-
-
-async function getCurrentUserId(): Promise<string> {
-    initAdmin();
-    // In a real app, you'd get this from the session.
-    // For this prototype, we'll use a hardcoded UID to avoid permission issues with listUsers.
-    // This corresponds to the first pre-seeded user.
-    return "erYvJ848w6hSFjvPBfOA5zwqLK72";
-}
 
 
 export {
@@ -45,12 +32,6 @@ export const answerStudyingQuestionAction = answerStudyingQuestion;
 
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
-export async function saveToContentLibraryAction(input: SaveToContentLibraryInput) {
-    const userId = await getCurrentUserId();
-    return saveToContentLibrary(input, userId);
-}
+export const saveToContentLibraryAction = saveToContentLibrary;
+export const saveAssessmentAction = saveAssessment;
 
-export async function saveAssessmentAction(input: SaveAssessmentInput) {
-     const userId = await getCurrentUserId();
-    return saveAssessment(input, userId);
-}

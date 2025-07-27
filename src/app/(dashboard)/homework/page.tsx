@@ -202,7 +202,7 @@ export default function HomeworkPage() {
   };
   
   const handleSaveToLibrary = async () => {
-    if (!output) return;
+    if (!output || !user) return;
     setIsSaving(true);
     const { topic, grade, language, inputType, libraryContentId } = getValues();
     
@@ -219,7 +219,7 @@ export default function HomeworkPage() {
             content: editedWorksheet,
             grade,
             language,
-        });
+        }, user.uid);
 
         // Save answer key
          await saveToContentLibraryAction({
@@ -228,7 +228,7 @@ export default function HomeworkPage() {
             content: editedAnswerKey,
             grade,
             language,
-        });
+        }, user.uid);
         
         toast({
             title: "Saved to Library",

@@ -177,7 +177,7 @@ export default function ContentGeneratorPage() {
   };
 
   const handleSaveToLibrary = async () => {
-    if (!output || !editedStory) return;
+    if (!output || !editedStory || !user) return;
     setIsSaving(true);
     try {
       const { prompt, grade, language } = getValues();
@@ -189,7 +189,7 @@ export default function ContentGeneratorPage() {
         language,
         imageUrl: output.diagramDataUri,
       }
-      await saveToContentLibraryAction(payload);
+      await saveToContentLibraryAction(payload, user.uid);
       toast({
         title: "Saved to Library",
         description: "Your content has been saved successfully.",
