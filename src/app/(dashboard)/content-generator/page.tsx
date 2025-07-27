@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,10 +30,13 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { generateLocalizedContentAction, suggestTagsForContentAction, saveToContentLibraryAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { BookOpen, Lightbulb, Save } from "lucide-react";
+import { BookOpen, Lightbulb, Save, Ban } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { GenerateLocalizedContentOutput, GenerateLocalizedContentInput } from "@/ai/flows/generate-localized-content";
 import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+
 
 const schema = z.object({
   prompt: z.string(),
@@ -51,6 +54,8 @@ const schema = z.object({
 type FormFields = z.infer<typeof schema>;
 
 export default function ContentGeneratorPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -80,6 +85,35 @@ export default function ContentGeneratorPage() {
   });
 
   const formValues = watch();
+
+  useEffect(() => {
+    if (!loading && user?.role === 'student') {
+        toast({
+            variant: "destructive",
+            title: "Unauthorized",
+            description: "You do not have permission to access this page.",
+        });
+        router.push("/");
+    }
+  }, [user, loading, router, toast]);
+
+  if (loading || user?.role === 'student') {
+     return (
+        <div className="flex h-full flex-col items-center justify-center">
+            {loading ? <Spinner className="w-12 h-12" /> : (
+                <Card className="w-full max-w-md">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto bg-destructive/20 rounded-full p-4 w-fit">
+                            <Ban className="w-12 h-12 text-destructive" />
+                        </div>
+                        <CardTitle className="mt-4">Access Denied</CardTitle>
+                        <CardDescription>You do not have permission to view this page.</CardDescription>
+                    </CardHeader>
+                </Card>
+            )}
+        </div>
+     );
+  }
 
   const handleSuggestTags = async () => {
     setIsSuggesting(true);

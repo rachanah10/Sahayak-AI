@@ -6,9 +6,10 @@ import { onAuthStateChanged, signOut as firebaseSignOut, type User } from 'fireb
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
-interface AuthUser extends User {
+export interface AuthUser extends User {
   is_admin?: boolean;
   name?: string;
+  role?: 'teacher' | 'student';
 }
 
 export function useAuth() {
@@ -22,14 +23,14 @@ export function useAuth() {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUser({ ...firebaseUser, ...userData, is_admin: userData.is_admin || false });
+          setUser({ ...firebaseUser, ...userData, is_admin: userData.is_admin || false, role: userData.role });
         } else {
           // User exists in Auth but not Firestore. Handle this case.
-          setUser({ ...firebaseUser, is_admin: false });
+          setUser({ ...firebaseUser, is_admin: false, role: undefined });
         }
       } catch (error) {
         console.error("Error fetching user document:", error);
-        setUser({ ...firebaseUser, is_admin: false });
+        setUser({ ...firebaseUser, is_admin: false, role: undefined });
       }
     } else {
       setUser(null);

@@ -32,38 +32,45 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, type AuthUser } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import React, { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-const menuItems = [
-  { href: "/", label: "Dashboard", Icon: BookOpen, exact: true },
-  { href: "/content-generator", label: "Content Generator", Icon: BookOpen },
-  { href: "/content-library", label: "Content Library", Icon: Library },
-  { href: "/homework", label: "Homework", Icon: NotebookTabs },
-  { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare },
-  { href: "/studying-assistant", label: "Studying Assistant", Icon: GraduationCap },
-  { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck },
-  { href: "/view-assessments", label: "View Assessments", Icon: Users },
-  { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays },
-  { href: "/progress-tracker", label: "Progress Tracker", Icon: Users },
+const allMenuItems = [
+  { href: "/", label: "Dashboard", Icon: BookOpen, exact: true, roles: ['teacher', 'student', 'admin'] },
+  { href: "/content-generator", label: "Content Generator", Icon: BookOpen, roles: ['teacher', 'admin'] },
+  { href: "/content-library", label: "Content Library", Icon: Library, roles: ['teacher', 'admin'] },
+  { href: "/homework", label: "Homework", Icon: NotebookTabs, roles: ['teacher', 'admin'] },
+  { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare, roles: ['teacher', 'admin'] },
+  { href: "/studying-assistant", label: "Studying Assistant", Icon: GraduationCap, roles: ['student', 'admin'] },
+  { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck, roles: ['teacher', 'admin'] },
+  { href: "/view-assessments", label: "View Assessments", Icon: Users, roles: ['teacher', 'admin'] },
+  { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays, roles: ['teacher', 'admin'] },
+  { href: "/progress-tracker", label: "Progress Tracker", Icon: Users, roles: ['teacher', 'admin'] },
+  { href: "/signup", label: "Add User", Icon: UserPlus, roles: ['admin'] },
 ];
 
-const adminMenuItems = [
-  { href: "/signup", label: "Add User", Icon: UserPlus },
-];
+function getMenuItemsForUser(user: AuthUser | null) {
+    if (!user) return [];
+    
+    const userRole = user.is_admin ? 'admin' : user.role;
+
+    if (!userRole) return [];
+
+    return allMenuItems.filter(item => item.roles.includes(userRole));
+}
 
 
-function SidebarNav({ user, onLinkClick }: { user: any, onLinkClick?: () => void }) {
+function SidebarNav({ user, onLinkClick }: { user: AuthUser | null, onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const allMenuItems = user?.is_admin ? [...menuItems, ...adminMenuItems] : menuItems;
+  const menuItems = getMenuItemsForUser(user);
 
   return (
     <nav className="grid items-start px-4 text-sm font-medium">
-      {allMenuItems.map(({ href, label, Icon, exact }) => {
+      {menuItems.map(({ href, label, Icon, exact }) => {
         const isActive = exact ? pathname === href : pathname.startsWith(href);
         return (
           <Link
@@ -147,7 +154,7 @@ export default function DashboardLayout({
                 <SheetHeader className="p-6 pb-2">
                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                    <SheetDescription className="sr-only">Main navigation links for the application.</SheetDescription>
-                  <Link href="/" className="flex items-center gap-2 font-semibold">
+                  <Link href="/" className="flex items-center gap-2 font-semibold" onClick={closeSheet}>
                     <Logo className="h-6 w-6" />
                     <span>Sahayak</span>
                   </Link>
