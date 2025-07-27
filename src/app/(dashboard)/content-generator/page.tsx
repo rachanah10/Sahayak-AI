@@ -33,7 +33,7 @@ import { PageHeader } from "@/components/page-header";
 import { BookOpen, Lightbulb, Save } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { GenerateLocalizedContentOutput, GenerateLocalizedContentInput } from "@/ai/flows/generate-localized-content";
-import type { SaveToContentLibraryInput } from "@/ai/flows/save-to-content-library";
+import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
 
 const schema = z.object({
   prompt: z.string(),
@@ -187,7 +187,7 @@ export default function ContentGeneratorPage() {
             <CardContent className="space-y-4">
               {/* Main Inputs */}
               <div className="space-y-2">
-                <Label htmlFor="prompt">Content Prompt *</Label>
+                <Label htmlFor="prompt">Content Prompt</Label>
                 <Textarea id="prompt" placeholder="e.g., A story about forgiveness" {...register("prompt")} />
                 {errors.prompt && <p className="text-sm text-destructive">{errors.prompt.message}</p>}
               </div>
