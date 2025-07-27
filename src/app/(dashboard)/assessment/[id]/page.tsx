@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ClipboardCheck, AlertCircle, CheckCircle, Clock, ArrowRight, Lightbulb } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { saveStudentAssessmentAction, getNextAdaptiveQuestionAction } from '@/app/actions';
+import { saveStudentAssessmentAction, getNextAdaptiveQuestionAction, gradeAnswerAction } from '@/app/actions';
 import type { Question } from '@/ai/flows/generate-assessment-questions';
 import type { AnsweredQuestion } from '@/ai/schemas/adaptive-assessment-schemas';
 import { Badge } from '@/components/ui/badge';
@@ -54,8 +54,11 @@ export default function TakeAssessmentPage() {
       const docRef = doc(db, 'assessments', assessmentId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        const data = docSnap.data() as AssessmentDetails;
-        setAssessment(data);
+        const data = docSnap.data() as any;
+        setAssessment({
+            ...data,
+            id: docSnap.id
+        });
         if (data.timer) {
           setTimeLeft(data.timer * 60);
         }
@@ -115,18 +118,23 @@ export default function TakeAssessmentPage() {
 
     setIsSubmitting(true);
     
-    // Simple case-insensitive and whitespace-trimmed comparison for correctness
-    const isCorrect = currentAnswer.trim().toLowerCase() === currentQuestion.answer.trim().toLowerCase();
-    
-    const newAnsweredQuestion: AnsweredQuestion = {
-        ...currentQuestion,
-        studentAnswer: currentAnswer,
-        isCorrect,
-    };
-    const updatedAnsweredQuestions = [...answeredQuestions, newAnsweredQuestion];
-    setAnsweredQuestions(updatedAnsweredQuestions);
-
     try {
+        // 1. Grade the current answer using the grading agent
+        const gradingResult = await gradeAnswerAction({
+            questionText: currentQuestion.text,
+            correctAnswer: currentQuestion.answer,
+            studentAnswer: currentAnswer
+        });
+
+        const newAnsweredQuestion: AnsweredQuestion = {
+            ...currentQuestion,
+            studentAnswer: currentAnswer,
+            isCorrect: gradingResult.isCorrect,
+        };
+        const updatedAnsweredQuestions = [...answeredQuestions, newAnsweredQuestion];
+        setAnsweredQuestions(updatedAnsweredQuestions);
+
+        // 2. Get the next question from the recommendation agent
         const res = await getNextAdaptiveQuestionAction({
             allQuestions: assessment.questions,
             answeredQuestions: updatedAnsweredQuestions,
@@ -137,7 +145,7 @@ export default function TakeAssessmentPage() {
             setIsComplete(true);
             setFinalScore(res.finalScore ?? 0);
             
-            // Final save to database
+            // 3. Final save to database
             const timeTaken = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
             if (user) {
               await saveStudentAssessmentAction({
@@ -156,8 +164,8 @@ export default function TakeAssessmentPage() {
         }
 
     } catch (error) {
-        console.error("Error getting next question:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not proceed to the next question."});
+        console.error("Error during assessment step:", error);
+        toast({ variant: "destructive", title: "Error", description: "An error occurred. Please try again."});
     } finally {
         setIsSubmitting(false);
     }

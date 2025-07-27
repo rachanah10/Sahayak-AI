@@ -29,7 +29,7 @@ const prompt = ai.definePrompt({
   - Total questions to ask in this session: {{questionsToAsk}}
   - Questions answered so far: {{answeredQuestions.length}}
 
-  **Student's Answer History:**
+  **Student's Answer History (Recent to Oldest):**
   {{#if answeredQuestions.length}}
     {{#each answeredQuestions}}
     - Question {{this.no}} (Difficulty: {{this.difficulty}}): {{#if this.isCorrect}}Correct{{else}}Incorrect{{/if}}
@@ -43,9 +43,9 @@ const prompt = ai.definePrompt({
   1.  **Check if the test is complete.** The test is complete if the number of answered questions equals the 'questionsToAsk' value.
 
   2.  **If the test is NOT complete:**
-      a.  Analyze the student's performance on the answered questions.
-      b.  Select the **best next question** from the 'allQuestions' list that has NOT already been answered.
-      c.  The ideal next question should challenge the student appropriately. If they are doing well, select a slightly harder question. If they are struggling, select an easier one. Try to vary the difficulty.
+      a.  Analyze the student's performance on the answered questions. Pay attention to the difficulty of the questions they got right or wrong.
+      b.  Select the **best next question** from the 'allQuestions' list that has NOT already been answered. Do not repeat questions.
+      c.  The ideal next question should challenge the student appropriately. If they are doing well (especially on hard questions), select a slightly harder question. If they are struggling (especially on easy questions), select an easier one. Try to vary the difficulty to get a good sense of their ability.
       d.  Return **only** the 'nextQuestion'. Do not return 'isComplete' or 'finalScore'.
 
   3.  **If the test IS complete:**

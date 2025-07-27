@@ -17,6 +17,7 @@ import { saveAssessment } from "@/ai/flows/save-assessment";
 import { saveStudentAssessment } from "@/ai/flows/save-student-assessment";
 import { getNextAdaptiveQuestion } from "@/ai/flows/get-next-adaptive-question";
 import { generateRevisionQuestionsAction } from "@/ai/flows/generate-revision-questions";
+import { gradeAnswer } from "@/ai/flows/grade-answer";
 import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
 import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
 import type { SaveStudentAssessmentInput } from "@/ai/schemas/save-student-assessment-schemas";
@@ -37,6 +38,7 @@ export {
 export const answerTeachingQuestionAction = answerTeachingQuestion;
 export const answerStudyingQuestionAction = answerStudyingQuestion;
 export const getNextAdaptiveQuestionAction = getNextAdaptiveQuestion;
+export const gradeAnswerAction = gradeAnswer;
 
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
