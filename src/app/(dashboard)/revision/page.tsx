@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { generateRevisionQuestionsAction, gradeAnswerAction, saveStudentAssessmentAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { BookCheck, ArrowRight, CheckCircle, XCircle } from "lucide-react";
+import { BookCheck, ArrowRight, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { collection, query, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -41,6 +41,7 @@ const schema = z.object({
   topic: z.string().min(1, "Please select a topic."),
   numQuestions: z.coerce.number().min(1, "At least 1 question is required.").max(20, "Maximum 20 questions."),
   questionType: z.enum(['Multiple Choice', 'Fill in the Blanks', 'Short Answer', 'Mix']),
+  timer: z.coerce.number().optional(),
 });
 
 type FormFields = z.infer<typeof schema>;
@@ -58,6 +59,9 @@ export default function RevisionPage() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
   const [gradedAnswers, setGradedAnswers] = useState<GradedAnswer[] | null>(null);
+
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const { toast } = useToast();
 
@@ -100,6 +104,20 @@ export default function RevisionPage() {
     fetchTopics();
   }, [user]);
 
+  useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0 || gradedAnswers) return;
+    const intervalId = setInterval(() => {
+      setTimeLeft(prev => (prev ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [timeLeft, gradedAnswers]);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     if (!user) {
         toast({ variant: "destructive", title: "Error", description: "You must be logged in." });
@@ -109,12 +127,19 @@ export default function RevisionPage() {
     setQuestions(null);
     setGradedAnswers(null);
     setStudentAnswers({});
+    setTimeLeft(null);
+    setStartTime(null);
+
     try {
       const result = await generateRevisionQuestionsAction({
           ...data,
           studentId: user.uid
       });
       setQuestions(result.questions);
+      if (data.timer) {
+        setTimeLeft(data.timer * 60);
+      }
+      setStartTime(Date.now());
     } catch (error) {
       console.error(error);
       toast({
@@ -151,12 +176,13 @@ export default function RevisionPage() {
         // Save the revision attempt
         const correctCount = graded.filter(a => a.isCorrect).length;
         const score = (correctCount / questions.length) * 100;
+        const timeTaken = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
 
         await saveStudentAssessmentAction({
             studentId: user.uid,
             assessmentId: `revision-${Date.now()}`,
             assessmentTopic: formValues.topic,
-            timeTaken: 0, // Not tracking time for revisions yet
+            timeTaken: timeTaken,
             adaptiveScore: score,
             questionsAttempted: graded.map(g => ({
                 ...g,
@@ -221,6 +247,10 @@ export default function RevisionPage() {
                     </Select>
                 </div>
               </div>
+               <div className="space-y-2">
+                    <Label htmlFor="timer">Timer (minutes)</Label>
+                    <Input id="timer" type="number" placeholder="e.g., 10" {...register("timer")} />
+                </div>
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoading}>
@@ -248,10 +278,18 @@ export default function RevisionPage() {
                 <CardTitle>Revision Sheet</CardTitle>
                 <CardDescription>Topic: {formValues.topic}</CardDescription>
               </div>
+              <div className="flex items-center gap-4">
+                 {timeLeft !== null && (
+                  <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+                    <Clock className="w-6 h-6" />
+                    <span>{formatTime(timeLeft)}</span>
+                  </div>
+                )}
                <Button onClick={handleSubmitAnswers} disabled={isSubmitting}>
                  {isSubmitting ? <Spinner className="mr-2" /> : null}
                  Submit Answers <ArrowRight className="ml-2" />
                </Button>
+               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
@@ -314,3 +352,5 @@ export default function RevisionPage() {
     </div>
   );
 }
+
+    
