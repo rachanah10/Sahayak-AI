@@ -149,7 +149,7 @@ const prompt = ai.definePrompt({
   Subject: {{subject}}
   Topic/Chapter: {{topic}}
   Grade: {{grade}}
-  Total Number of Questions: {{numQuestions}}
+  Total Number of Questions to Generate: {{numQuestions}}
   Type of Questions: {{questionType}}
   {{#if uploadedContent}}Base content on this image: {{media url=uploadedContent}}{{/if}}
   {{#if libraryContent}}Base content on this text: {{{libraryContent}}}{{/if}}
@@ -158,7 +158,7 @@ const prompt = ai.definePrompt({
   Instructions:
   1. Generate exactly {{numQuestions}} questions in total.
   2. For each question, provide all the fields specified in the output schema.
-  3. The 'difficulty' field must be a number between 1 and 5. Ensure there is a good mix of difficulties unless the tags suggest otherwise.
+  3. The 'difficulty' field must be a number between 1 and 5. Ensure there is a good mix of difficulties (e.g., some 1s, some 2s, up to 5) across all generated questions.
   4. Ensure the question text, answer, and tags are relevant and accurate for the grade level.
   5. The 'no' field should be a string representing the question number (e.g., "1", "2", ...).
   6. Generate a suitable title for the test based on the subject and topic.
@@ -175,7 +175,15 @@ const generateAssessmentQuestionsFlow = ai.defineFlow(
     outputSchema: GenerateAssessmentQuestionsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    // Multiply the number of questions by 3 before sending to the prompt
+    const totalQuestionsToGenerate = input.numQuestions * 3;
+    
+    const promptInput = {
+      ...input,
+      numQuestions: totalQuestionsToGenerate,
+    };
+
+    const {output} = await prompt(promptInput);
     if (!output) {
       throw new Error('Failed to generate assessment. The prompt may have been blocked by safety settings.');
     }
