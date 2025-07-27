@@ -22,12 +22,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { CalendarDays, Lightbulb, Edit, CheckCircle } from "lucide-react";
+import { CalendarDays, Lightbulb, Edit, CheckCircle, Calendar as CalendarIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { CreateWeeklyLessonPlanInput } from "@/ai/flows/create-weekly-lesson-plan";
 import { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const grades = Array.from({ length: 10 }, (_, i) => `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade`);
 
@@ -179,13 +181,43 @@ export default function LessonPlannerPage() {
               {/* Date Range */}
               <div className="space-y-2">
                 <Label>Date Range</Label>
-                <Calendar
-                  mode="range"
-                  selected={formValues.dateRange as DateRange}
-                  onSelect={(range) => setValue("dateRange", range || { from: undefined, to: undefined })}
-                  disabled={{ dayOfWeek: [0, 6] }}
-                  className="rounded-md border p-0"
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="date"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formValues.dateRange.from && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formValues.dateRange?.from ? (
+                        formValues.dateRange.to ? (
+                          <>
+                            {format(formValues.dateRange.from, "LLL dd, y")} -{" "}
+                            {format(formValues.dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(formValues.dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={formValues.dateRange?.from}
+                      selected={formValues.dateRange as DateRange}
+                      onSelect={(range) => setValue("dateRange", range || { from: undefined, to: undefined })}
+                      numberOfMonths={2}
+                       disabled={{ dayOfWeek: [0, 6] }}
+                    />
+                  </PopoverContent>
+                </Popover>
                  {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.message}</p>}
               </div>
 
@@ -245,12 +277,15 @@ export default function LessonPlannerPage() {
                     {lessonPlan && (
                        isPlanFinalized ? (
                          <Button variant="outline" size="sm" onClick={() => setIsPlanFinalized(false)}>
-                            <Edit className="mr-2" />
+                            <Edit className="mr-2 h-4 w-4" />
                             Edit Plan
                         </Button>
                        ) : (
-                        <Button variant="default" size="sm" onClick={() => setIsPlanFinalized(true)}>
-                            <CheckCircle className="mr-2" />
+                        <Button variant="default" size="sm" onClick={() => {
+                          setIsPlanFinalized(true);
+                          toast({ title: "Plan Finalized", description: "The lesson plan is now in read-only mode." });
+                        }}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
                             Finalize Plan
                         </Button>
                        )
@@ -274,7 +309,7 @@ export default function LessonPlannerPage() {
                             value={lessonPlan}
                             onChange={(e) => setLessonPlan(e.target.value)}
                             placeholder="Your generated lesson plan will appear here..."
-                            className="min-h-96"
+                            className="min-h-[70vh]"
                         />
                     )
                 )}
@@ -289,3 +324,5 @@ export default function LessonPlannerPage() {
     </div>
   );
 }
+
+    
