@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ClipboardCheck, AlertCircle, CheckCircle, Clock, ArrowRight } from 'lucide-react';
+import { ClipboardCheck, AlertCircle, CheckCircle, Clock, ArrowRight, XCircle, Lightbulb } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAssessmentAction, getNextAdaptiveQuestionAction, gradeAnswerAction } from '@/app/actions';
@@ -21,6 +21,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+
+type AssessmentStatus = "loading" | "in-progress" | "showing-feedback" | "complete" | "error";
 
 interface AssessmentDetails {
   id: string;
@@ -30,14 +33,20 @@ interface AssessmentDetails {
   questions: Question[];
 }
 
+interface LastAnswerResult {
+    isCorrect: boolean;
+    correctAnswer: string;
+    studentAnswer: string;
+}
+
 export default function TakeAssessmentPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
+  const [status, setStatus] = useState<AssessmentStatus>("loading");
   const [assessment, setAssessment] = useState<AssessmentDetails | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
@@ -47,51 +56,40 @@ export default function TakeAssessmentPage() {
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [questionsToAsk, setQuestionsToAsk] = useState(0);
   
-  const [isComplete, setIsComplete] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [lastAnswerResult, setLastAnswerResult] = useState<LastAnswerResult | null>(null);
 
   const fetchAssessment = useCallback(async (assessmentId: string) => {
-    setLoading(true);
+    setStatus("loading");
     try {
       const docRef = doc(db, 'assessments', assessmentId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data() as any;
-        setAssessment({
-            ...data,
-            id: docSnap.id
-        });
-        if (data.timer) {
-          setTimeLeft(data.timer * 60);
-        }
+        setAssessment({ ...data, id: docSnap.id });
+        if (data.timer) setTimeLeft(data.timer * 60);
         setStartTime(Date.now());
-        // Set total questions to 1/3 of the total, minimum 1
+        
         const totalToAsk = Math.max(1, Math.floor(data.questions.length / 3));
         setQuestionsToAsk(totalToAsk);
 
-        // Get the first question
-        const res = await getNextAdaptiveQuestionAction({
-            allQuestions: data.questions,
-            answeredQuestions: [],
-            questionsToAsk: totalToAsk,
-        });
+        const res = await getNextAdaptiveQuestionAction({ allQuestions: data.questions, answeredQuestions: [], questionsToAsk: totalToAsk });
         if (res.nextQuestion) {
             setCurrentQuestion(res.nextQuestion);
+            setStatus("in-progress");
         } else {
-            // This case shouldn't happen on first load
-            setIsComplete(true);
+            setStatus("complete");
             setFinalScore(res.finalScore ?? 0);
         }
-
       } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Assessment not found.' });
         router.push('/view-assessments');
+        setStatus("error");
       }
     } catch (error) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to load the assessment.' });
-    } finally {
-      setLoading(false);
+      setStatus("error");
     }
   }, [router, toast]);
 
@@ -102,26 +100,24 @@ export default function TakeAssessmentPage() {
   }, [id, fetchAssessment]);
 
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0 || isComplete) return;
+    if (timeLeft === null || timeLeft <= 0 || status !== 'in-progress') return;
     const intervalId = setInterval(() => {
       setTimeLeft(prev => (prev ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [timeLeft, isComplete]);
-
+  }, [timeLeft, status]);
+  
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSaveAndNext = async () => {
+  const handleAnswerSubmit = async () => {
     if (!currentQuestion || !assessment || isSubmitting) return;
-
     setIsSubmitting(true);
     
     try {
-        // 1. Grade the current answer using the grading agent
         const gradingResult = await gradeAnswerAction({
             questionText: currentQuestion.text,
             correctAnswer: currentQuestion.answer,
@@ -133,63 +129,73 @@ export default function TakeAssessmentPage() {
             studentAnswer: currentAnswer,
             isCorrect: gradingResult.isCorrect,
         };
-        const updatedAnsweredQuestions = [...answeredQuestions, newAnsweredQuestion];
-        setAnsweredQuestions(updatedAnsweredQuestions);
+        
+        setLastAnswerResult({
+            isCorrect: gradingResult.isCorrect,
+            correctAnswer: currentQuestion.answer,
+            studentAnswer: currentAnswer
+        });
+        setAnsweredQuestions(prev => [...prev, newAnsweredQuestion]);
+        setStatus("showing-feedback");
 
-        // 2. Get the next question from the recommendation agent
+    } catch (error) {
+        console.error("Error during answer submission:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not grade your answer. Please try again."});
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const handleNextQuestion = async () => {
+    if (!assessment) return;
+    setIsSubmitting(true);
+    setCurrentAnswer("");
+    setLastAnswerResult(null);
+
+    try {
         const res = await getNextAdaptiveQuestionAction({
             allQuestions: assessment.questions,
-            answeredQuestions: updatedAnsweredQuestions,
+            answeredQuestions: answeredQuestions,
             questionsToAsk,
         });
 
         if (res.isComplete || !res.nextQuestion) {
-            setIsComplete(true);
+            setStatus("complete");
             setFinalScore(res.finalScore ?? 0);
             
-            // 3. Final save to database
             const timeTaken = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
             if (user) {
               await saveStudentAssessmentAction({
                   studentId: user.uid,
                   assessmentId: id as string,
                   assessmentTopic: assessment.topic,
-                  questionsAttempted: updatedAnsweredQuestions,
+                  questionsAttempted: answeredQuestions,
                   timeTaken,
                   adaptiveScore: res.finalScore ?? 0,
               });
             }
-
         } else {
             setCurrentQuestion(res.nextQuestion);
-            setCurrentAnswer(""); // Reset answer field for next question
+            setStatus("in-progress");
         }
-
     } catch (error) {
-        console.error("Error during assessment step:", error);
-        toast({ variant: "destructive", title: "Error", description: "An error occurred. Please try again."});
+         console.error("Error fetching next question:", error);
+         toast({ variant: "destructive", title: "Error", description: "An error occurred. Please try again."});
     } finally {
         setIsSubmitting(false);
     }
   };
 
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <Spinner className="w-12 h-12" />
-      </div>
-    );
+  if (status === 'loading') {
+    return <div className="flex justify-center items-center h-full"><Spinner className="w-12 h-12" /></div>;
   }
   
-   if (isComplete) {
+  if (status === 'complete') {
     return (
         <div className="flex flex-col gap-8 items-center justify-center h-full text-center">
             <Card className="w-full max-w-lg">
                 <CardHeader>
-                    <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit mb-4">
-                        <CheckCircle className="w-16 h-16 text-primary" />
-                    </div>
+                    <div className="mx-auto bg-primary/20 rounded-full p-4 w-fit mb-4"><CheckCircle className="w-16 h-16 text-primary" /></div>
                     <CardTitle className="text-3xl">Assessment Complete!</CardTitle>
                     <CardDescription>Great job! Here is your result for the "{assessment?.topic}" assessment.</CardDescription>
                 </CardHeader>
@@ -198,46 +204,35 @@ export default function TakeAssessmentPage() {
                      <p className="text-muted-foreground">Your score is weighted based on question difficulty.</p>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={() => router.push('/view-assessments')} className="w-full">
-                        Back to Assessments
-                    </Button>
+                    <Button onClick={() => router.push('/view-assessments')} className="w-full">Back to Assessments</Button>
                 </CardFooter>
             </Card>
         </div>
-    )
+    );
   }
 
-  if (!assessment || !currentQuestion) {
+  if (status === 'error' || !assessment || !currentQuestion) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Assessment Not Found</AlertTitle>
-        <AlertDescription>
-          The assessment you are looking for does not exist or could not be loaded.
-        </AlertDescription>
+        <AlertTitle>Assessment Error</AlertTitle>
+        <AlertDescription>The assessment could not be loaded. Please go back and try again.</AlertDescription>
       </Alert>
     );
   }
 
   const progress = (answeredQuestions.length / questionsToAsk) * 100;
-  const isMcq = currentQuestion.options && currentQuestion.options.length > 0;
+  const isMcq = currentQuestion.questionType === 'Multiple Choice' && currentQuestion.options && currentQuestion.options.length > 0;
 
   return (
     <div className="flex flex-col gap-8 max-w-3xl mx-auto">
-      <PageHeader
-        title={assessment.topic}
-        description={`Grade: ${assessment.grade}`}
-        Icon={ClipboardCheck}
-      />
+      <PageHeader title={assessment.topic} description={`Grade: ${assessment.grade}`} Icon={ClipboardCheck} />
       <Card>
           <CardHeader>
             <div className="flex justify-between items-center mb-2">
                 <CardTitle>Question {answeredQuestions.length + 1} of {questionsToAsk}</CardTitle>
                  {timeLeft !== null && (
-                  <div className="flex items-center gap-2 text-lg font-semibold text-primary">
-                    <Clock className="w-6 h-6" />
-                    <span>{formatTime(timeLeft)}</span>
-                  </div>
+                  <div className="flex items-center gap-2 text-lg font-semibold text-primary"><Clock className="w-6 h-6" /><span>{formatTime(timeLeft)}</span></div>
                 )}
             </div>
             <Progress value={progress} />
@@ -258,26 +253,43 @@ export default function TakeAssessmentPage() {
                         ))}
                     </RadioGroup>
                 ) : (
-                    <Textarea
-                      id={`answer`}
-                      placeholder="Your answer..."
-                      value={currentAnswer}
-                      onChange={(e) => setCurrentAnswer(e.target.value)}
-                      className="bg-background min-h-[150px]"
-                    />
+                    <Textarea id={`answer`} placeholder="Your answer..." value={currentAnswer} onChange={(e) => setCurrentAnswer(e.target.value)} className="bg-background min-h-[150px]" />
                 )}
               </div>
+              {lastAnswerResult && status === 'showing-feedback' && (
+                <Card className={cn("p-4", lastAnswerResult.isCorrect ? "bg-green-100 dark:bg-green-900/50" : "bg-red-100 dark:bg-red-900/50")}>
+                  <CardHeader className="p-0 flex flex-row items-center gap-2">
+                    {lastAnswerResult.isCorrect ? <CheckCircle className="text-green-600" /> : <XCircle className="text-red-600" />}
+                    <CardTitle className="text-xl">{lastAnswerResult.isCorrect ? "Correct!" : "Not Quite"}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 pt-2 text-sm">
+                    {!lastAnswerResult.isCorrect && (
+                        <div className="p-2 mt-2 rounded-md bg-muted flex items-start gap-2">
+                            <Lightbulb className="text-yellow-500 mt-0.5" />
+                            <div><span className="font-bold">Correct Answer: </span> {lastAnswerResult.correctAnswer}</div>
+                        </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button onClick={handleSaveAndNext} disabled={isSubmitting || !currentAnswer}>
-              {isSubmitting ? <Spinner className="mr-2" /> : null}
-              {answeredQuestions.length + 1 === questionsToAsk ? 'Finish & See Score' : 'Save & Next'}
-              <ArrowRight className="ml-2" />
-            </Button>
+            {status === 'in-progress' && (
+                <Button onClick={handleAnswerSubmit} disabled={isSubmitting || !currentAnswer}>
+                {isSubmitting ? <Spinner className="mr-2" /> : null}
+                Submit Answer
+                <ArrowRight className="ml-2" />
+                </Button>
+            )}
+            {status === 'showing-feedback' && (
+                 <Button onClick={handleNextQuestion} disabled={isSubmitting}>
+                    {isSubmitting ? <Spinner className="mr-2" /> : null}
+                    {answeredQuestions.length === questionsToAsk ? 'Finish & See Score' : 'Next Question'}
+                    <ArrowRight className="ml-2" />
+                </Button>
+            )}
           </CardFooter>
         </Card>
     </div>
   );
 }
-
-    
