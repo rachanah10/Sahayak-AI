@@ -165,9 +165,9 @@ const prompt = ai.definePrompt({
   7. The 'no' field should be a string representing the question number (e.g., "1", "2", ...).
   8. Generate a suitable title for the test based on the subject and topic.
 `,
+  model: 'googleai/gemini-2.0-flash-preview-0514',
   config: {
     safetySettings,
-    model: 'googleai/gemini-2.0-flash-preview-0514'
   }
 });
 
