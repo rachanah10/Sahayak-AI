@@ -59,8 +59,7 @@ Use the following context to help answer the user's question:
 {{#if history}}
 Chat History:
 {{#each history}}
-{{#if (this.role == 'user')}}User: {{this.content}}{{/if}}
-{{#if (this.role == 'model')}}Assistant: {{this.content}}{{/if}}
+{{this.role}}: {{this.content}}
 {{/each}}
 {{/if}}
 
