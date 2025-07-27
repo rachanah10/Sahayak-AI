@@ -21,6 +21,11 @@ const mockEvents: CalendarEvent[] = [
         title: "The Mughal Empire",
         description: "6th Grade: Introduction to Babur and the founding of the empire."
     },
+    { 
+        date: new Date(2024, 7, 7), 
+        title: "Reading Comprehension",
+        description: "4th Grade: Read a short story and answer questions about the main character and plot."
+    },
      { 
         date: new Date(2024, 7, 8), 
         title: "Algebra Basics",
@@ -51,7 +56,7 @@ export default function CalendarPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Lesson Calendar</CardTitle>
-                <CardDescription>Your saved lesson plans are shown here.</CardDescription>
+                <CardDescription>Your saved lesson plans are shown here. Click on a day with an event to see details.</CardDescription>
             </CardHeader>
             <CardContent>
                 <CalendarView
@@ -64,4 +69,5 @@ export default function CalendarPage() {
     </div>
   );
 }
+
 

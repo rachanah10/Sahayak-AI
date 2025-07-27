@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -19,6 +20,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -39,6 +46,10 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ events, month, setMonth }: CalendarViewProps) {
+  const [selectedDayEvents, setSelectedDayEvents] = React.useState<CalendarEvent[]>([]);
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  
   const firstDayOfMonth = startOfMonth(month);
   const lastDayOfMonth = endOfMonth(month);
 
@@ -50,6 +61,14 @@ export function CalendarView({ events, month, setMonth }: CalendarViewProps) {
   const getEventsForDay = (day: Date) => {
     return events.filter(event => isSameDay(event.date, day));
   };
+  
+  const handleDayClick = (day: Date, dayEvents: CalendarEvent[]) => {
+    if (dayEvents.length > 0) {
+        setSelectedDate(day);
+        setSelectedDayEvents(dayEvents);
+        setIsDialogOpen(true);
+    }
+  }
 
   const nextMonth = () => setMonth(addMonths(month, 1));
   const prevMonth = () => setMonth(subMonths(month, 1));
@@ -80,10 +99,12 @@ export function CalendarView({ events, month, setMonth }: CalendarViewProps) {
           return (
             <div
               key={day.toString()}
+              onClick={() => handleDayClick(day, dayEvents)}
               className={cn(
                 "border rounded-md h-28 p-1 text-sm overflow-y-auto",
                 !isCurrentMonth && "bg-muted/50 text-muted-foreground",
-                isToday(day) && "bg-accent/20"
+                isToday(day) && "bg-accent/20",
+                dayEvents.length > 0 && "cursor-pointer hover:bg-muted/80 transition-colors"
               )}
             >
               <div className={cn("font-bold", isToday(day) && "text-primary")}>
@@ -92,7 +113,7 @@ export function CalendarView({ events, month, setMonth }: CalendarViewProps) {
               <TooltipProvider>
                 <div className="mt-1 space-y-1">
                   {dayEvents.map((event, i) => (
-                     <Tooltip key={i}>
+                     <Tooltip key={i} delayDuration={300}>
                         <TooltipTrigger asChild>
                             <Badge className="w-full text-left justify-start truncate cursor-pointer">
                                 {event.title}
@@ -110,6 +131,26 @@ export function CalendarView({ events, month, setMonth }: CalendarViewProps) {
           );
         })}
       </div>
+      
+       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent className="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>
+                        {selectedDate ? `Lesson Plan for ${format(selectedDate, 'PPP')}` : 'Lesson Plan'}
+                    </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4">
+                    {selectedDayEvents.length > 0 ? selectedDayEvents.map((event, index) => (
+                        <div key={index} className="pb-4 border-b last:border-b-0">
+                            <h3 className="font-semibold text-lg mb-1">{event.title}</h3>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
+                        </div>
+                    )) : (
+                        <p>No lesson plans for this day.</p>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
