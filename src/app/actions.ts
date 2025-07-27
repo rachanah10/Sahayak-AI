@@ -16,6 +16,7 @@ import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
 import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 import { saveAssessment } from "@/ai/flows/save-assessment";
 import { saveStudentAssessment } from "@/ai/flows/save-student-assessment";
+import { getNextAdaptiveQuestion } from "@/ai/flows/get-next-adaptive-question";
 import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
 import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
 import type { SaveStudentAssessmentInput } from "@/ai/schemas/save-student-assessment-schemas";
@@ -29,7 +30,8 @@ export {
   createWeeklyLessonPlanAction,
   suggestLessonPlanTagsAction,
   generateAssessmentQuestionsAction,
-  suggestAssessmentTagsAction
+  suggestAssessmentTagsAction,
+  getNextAdaptiveQuestion as getNextAdaptiveQuestionAction,
 };
 
 export const answerTeachingQuestionAction = answerTeachingQuestion;
