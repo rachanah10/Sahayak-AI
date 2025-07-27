@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,31 +27,73 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { generateAssessmentQuestionsAction, saveAssessmentAction } from "@/app/actions";
+import { generateAssessmentQuestionsAction, saveAssessmentAction, suggestAssessmentTagsAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { ClipboardCheck, CalendarIcon, Key, FileText, CheckCircle, Save } from "lucide-react";
+import { ClipboardCheck, CalendarIcon, Key, FileText, CheckCircle, Save, Lightbulb } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type { GenerateAssessmentQuestionsOutput, GenerateAssessmentQuestionsInput } from "@/ai/flows/generate-assessment-questions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const schema = z.object({
-  subject: z.string().min(2, "Please enter a subject."),
-  topic: z.string().min(3, "Please enter a topic/chapter."),
+  subject: z.string().optional(),
+  topic: z.string().optional(),
   grade: z.string().min(1, "Please select a grade."),
   numQuestions: z.coerce.number().min(1, "At least 1 question is required.").max(20, "Maximum 20 questions."),
   questionType: z.enum(['Multiple Choice', 'Fill in the Blanks', 'Short Answer', 'Mix']),
   timer: z.coerce.number().optional(),
   deadline: z.date().optional(),
+  inputType: z.enum(["topic", "upload", "library"]),
+  image: z.any().optional(),
+  libraryContentId: z.string().optional(),
+}).refine(data => {
+    if (data.inputType === 'topic') return !!data.subject && data.subject.length >= 2 && !!data.topic && data.topic.length >= 3;
+    return true;
+}, {
+    message: "Subject and Topic are required.",
+    path: ["topic"],
+}).refine(data => {
+    if (data.inputType === 'upload') return !!data.image && data.image.length > 0;
+    return true;
+}, {
+    message: "Image is required for this input type.",
+    path: ["image"],
+}).refine(data => {
+    if (data.inputType === 'library') return !!data.libraryContentId;
+    return true;
+}, {
+    message: "Please select an item from the library.",
+    path: ["libraryContentId"],
 });
+
 
 type FormFields = z.infer<typeof schema>;
 
+interface LibraryContent {
+  id: string;
+  story?: string;
+  worksheet?: string;
+  prompt: string;
+}
+
 export default function AssessmentGeneratorPage() {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [assessment, setAssessment] = useState<GenerateAssessmentQuestionsOutput | null>(null);
   const [isPublished, setIsPublished] = useState(false);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [libraryContent, setLibraryContent] = useState<LibraryContent[]>([]);
+  
   const { toast } = useToast();
 
   const {
@@ -58,6 +101,7 @@ export default function AssessmentGeneratorPage() {
     handleSubmit,
     control,
     watch,
+    getValues,
     setValue,
     formState: { errors },
   } = useForm<FormFields>({
@@ -65,21 +109,96 @@ export default function AssessmentGeneratorPage() {
     defaultValues: {
       numQuestions: 5,
       questionType: "Mix",
-      grade: "4th Grade"
+      grade: "4th Grade",
+      inputType: "topic",
     },
   });
 
   const formValues = watch();
+
+  useEffect(() => {
+    async function fetchContent() {
+      if (!user) return;
+      try {
+        const q = query(
+          collection(db, "content-library"),
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        const content = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as LibraryContent[];
+        setLibraryContent(content);
+      } catch (error) {
+        console.error("Error fetching library content: ", error);
+      }
+    }
+    fetchContent();
+  }, [user]);
+
+  const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleSuggestTags = async () => {
+    setIsSuggesting(true);
+    setSuggestedTags([]);
+    try {
+      const { subject, topic, grade, inputType, image, libraryContentId } = getValues();
+      const selectedLibraryItem = libraryContent.find(item => item.id === libraryContentId);
+
+      const result = await suggestAssessmentTagsAction({ 
+        subject,
+        topic, 
+        grade, 
+        uploadedContent: inputType === 'upload' && image?.[0] ? image[0].name : undefined,
+        libraryContent: inputType === 'library' ? (selectedLibraryItem?.story || selectedLibraryItem?.worksheet) : undefined,
+       });
+      setSuggestedTags(result.suggestedTags);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to suggest tags." });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => {
+        const newSet = new Set(prev);
+        newSet.has(tag) ? newSet.delete(tag) : newSet.add(tag);
+        return newSet;
+    });
+  };
 
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     setIsLoading(true);
     setAssessment(null);
     setIsPublished(false);
     try {
-      const payload: GenerateAssessmentQuestionsInput = {
+      let payload: GenerateAssessmentQuestionsInput = {
         ...data,
         deadline: data.deadline ? format(data.deadline, "PPP") : undefined,
+        tags: Array.from(selectedTags),
       };
+
+      if (data.inputType === 'upload' && data.image && data.image.length > 0) {
+        payload.uploadedContent = await fileToDataUri(data.image[0]);
+      } else if (data.inputType === 'library' && data.libraryContentId) {
+        const selectedItem = libraryContent.find(item => item.id === data.libraryContentId);
+        payload.libraryContent = selectedItem?.story || selectedItem?.worksheet;
+        if (!data.topic) {
+            payload.topic = selectedItem?.prompt;
+        }
+      }
+
       const result = await generateAssessmentQuestionsAction(payload);
       setAssessment(result);
     } catch (error) {
@@ -103,15 +222,16 @@ export default function AssessmentGeneratorPage() {
   }
   
   const handleSave = async () => {
-    if(!assessment) return;
+    if(!assessment || !formValues.topic || !formValues.subject) return;
     setIsSaving(true);
     try {
         await saveAssessmentAction({
             ...formValues,
+            topic: formValues.topic,
+            subject: formValues.subject,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
             testContent: assessment.testContent,
             answerKey: assessment.answerKey,
-            numQuestions: Number(formValues.numQuestions), // ensure numQuestions is a number
         })
         toast({
             title: "Test Saved!",
@@ -143,20 +263,58 @@ export default function AssessmentGeneratorPage() {
               <CardTitle>Assessment Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="subject">Subject *</Label>
-                    <Input id="subject" placeholder="e.g., Science" {...register("subject")} />
-                    {errors.subject && <p className="text-sm text-destructive">{errors.subject.message}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="topic">Topic/Chapter *</Label>
-                    <Input id="topic" placeholder="e.g., The Solar System" {...register("topic")} />
-                    {errors.topic && <p className="text-sm text-destructive">{errors.topic.message}</p>}
-                </div>
-              </div>
+               <Tabs defaultValue="topic" className="w-full" onValueChange={(v) => setValue("inputType", v as FormFields['inputType'])}>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="topic">Topic</TabsTrigger>
+                    <TabsTrigger value="upload">Upload</TabsTrigger>
+                    <TabsTrigger value="library">Library</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="topic" className="pt-4 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="subject">Subject *</Label>
+                          <Input id="subject" placeholder="e.g., Science" {...register("subject")} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="topic">Topic/Chapter *</Label>
+                          <Input id="topic" placeholder="e.g., The Solar System" {...register("topic")} />
+                      </div>
+                    </div>
+                     {errors.topic && <p className="text-sm text-destructive">{errors.topic.message}</p>}
+                  </TabsContent>
+                  <TabsContent value="upload" className="pt-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="topic-upload">Topic (Optional)</Label>
+                        <Input id="topic-upload" placeholder="e.g., A specific theme to focus on" {...register("topic")} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="image">Upload Content *</Label>
+                      <Input id="image" type="file" {...register("image")} accept={ACCEPTED_IMAGE_TYPES.join(",")} />
+                      {errors.image && <p className="text-sm text-destructive">{errors.image.message?.toString()}</p>}
+                    </div>
+                  </TabsContent>
+                   <TabsContent value="library" className="pt-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="topic-library">Topic (Optional)</Label>
+                        <Input id="topic-library" placeholder="e.g., A specific theme to focus on" {...register("topic")} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="libraryContentId">Select from Content Library *</Label>
+                        <Select onValueChange={(v) => setValue("libraryContentId", v)}>
+                            <SelectTrigger><SelectValue placeholder="Select content..." /></SelectTrigger>
+                            <SelectContent>
+                                {libraryContent.map(item => (
+                                    <SelectItem key={item.id} value={item.id}>{item.prompt}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.libraryContentId && <p className="text-sm text-destructive">{errors.libraryContentId.message}</p>}
+                    </div>
+                  </TabsContent>
+                </Tabs>
 
-               <div className="space-y-2">
+
+               <div className="space-y-2 pt-4">
                     <Label htmlFor="grade">Grade *</Label>
                     <Select onValueChange={(value) => setValue("grade", value)} defaultValue={formValues.grade}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -220,6 +378,30 @@ export default function AssessmentGeneratorPage() {
                         </Popover>
                     </div>
                </div>
+               
+                <Card className="bg-muted/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg"><Lightbulb className="text-yellow-400" /> Smart Content Assistant</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Button type="button" variant="outline" onClick={handleSuggestTags} disabled={isSuggesting}>
+                        {isSuggesting ? <Spinner className="mr-2"/> : <Lightbulb className="mr-2" />}
+                        Suggest Tags
+                        </Button>
+                        {suggestedTags.length > 0 && (
+                            <div className="mt-4">
+                                <Label className="font-bold">Suggested Tags</Label>
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {suggestedTags.map(tag => (
+                                        <Badge key={tag} variant={selectedTags.has(tag) ? "default" : "secondary"} onClick={() => toggleTag(tag)} className="cursor-pointer">
+                                            {tag}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
             </CardContent>
             <CardFooter>
@@ -247,7 +429,7 @@ export default function AssessmentGeneratorPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Generated Assessment</CardTitle>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={handleSave} disabled={isSaving}>
+                        <Button variant="outline" size="sm" onClick={handleSave} disabled={isSaving || !formValues.subject || !formValues.topic}>
                             {isSaving ? <Spinner className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
                             Save
                         </Button>
