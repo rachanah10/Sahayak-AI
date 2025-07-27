@@ -1,5 +1,4 @@
 
-
 "use server";
 
 import {
@@ -32,12 +31,12 @@ export {
   suggestLessonPlanTagsAction,
   generateAssessmentQuestionsAction,
   suggestAssessmentTagsAction,
-  getNextAdaptiveQuestionAction,
   generateRevisionQuestionsAction,
 };
 
 export const answerTeachingQuestionAction = answerTeachingQuestion;
 export const answerStudyingQuestionAction = answerStudyingQuestion;
+export const getNextAdaptiveQuestionAction = getNextAdaptiveQuestion;
 
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
