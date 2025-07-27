@@ -27,6 +27,11 @@ import {
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 
 const schema = z.object({
@@ -36,17 +41,28 @@ type FormFields = z.infer<typeof schema>;
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
+interface LibraryContent {
+  id: string;
+  story: string;
+  prompt: string;
+}
+
 // Extend the message type to include an optional media preview for the UI
 interface DisplayMessage extends AIMessage {
     mediaPreview?: string;
+    contextTitle?: string;
 }
 
 export default function TeachingAssistantPage() {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [libraryContent, setLibraryContent] = useState<LibraryContent[]>([]);
+  const [selectedContext, setSelectedContext] = useState<{title: string, content: string} | null>(null);
+
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -54,6 +70,28 @@ export default function TeachingAssistantPage() {
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchContent() {
+      if (!user) return;
+      try {
+        const q = query(
+          collection(db, "content-library"),
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        const content = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as LibraryContent[];
+        setLibraryContent(content);
+      } catch (error) {
+        console.error("Error fetching library content: ", error);
+      }
+    }
+    fetchContent();
+  }, [user]);
 
 
   const { register, handleSubmit, reset, setValue, getValues } = useForm<FormFields>({
@@ -160,7 +198,18 @@ export default function TeachingAssistantPage() {
         }
         setMediaFile(file);
         setMediaPreview(URL.createObjectURL(file));
-        setIsDialogOpen(false); // Close dialog on file selection
+        setSelectedContext(null); // Clear library context if media is added
+        setIsDialogOpen(false);
+    }
+  }
+
+  const handleLibrarySelect = (contentId: string) => {
+    const item = libraryContent.find(c => c.id === contentId);
+    if (item) {
+        setSelectedContext({ title: item.prompt, content: item.story });
+        setMediaFile(null); // Clear media if library context is added
+        setMediaPreview(null);
+        setIsDialogOpen(false);
     }
   }
 
@@ -168,9 +217,13 @@ export default function TeachingAssistantPage() {
     setMediaFile(null);
     setMediaPreview(null);
   }
+  
+  const removeContext = () => {
+    setSelectedContext(null);
+  }
 
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
-    if (!data.question.trim() && !mediaFile) return;
+    if (!data.question.trim() && !mediaFile && !selectedContext) return;
 
     setIsLoading(true);
 
@@ -178,6 +231,7 @@ export default function TeachingAssistantPage() {
       role: "user",
       content: data.question,
       mediaPreview: mediaPreview || undefined,
+      contextTitle: selectedContext?.title,
     };
     
     // Create history from previous messages, excluding previews
@@ -188,7 +242,9 @@ export default function TeachingAssistantPage() {
     // Clear the input fields after constructing the message
     reset();
     const currentMediaFile = mediaFile;
+    const currentSelectedContext = selectedContext;
     removeMedia();
+    removeContext();
 
     try {
       let mediaDataUri: string | undefined = undefined;
@@ -200,6 +256,7 @@ export default function TeachingAssistantPage() {
          question: data.question,
          history,
          mediaDataUri,
+         context: currentSelectedContext?.content,
       });
 
       const assistantMessage: AIMessage = { role: "model", content: result.answer };
@@ -251,6 +308,12 @@ export default function TeachingAssistantPage() {
                                 className="rounded-md mb-2 aspect-square object-cover"
                             />
                         )}
+                        {message.contextTitle && (
+                           <div className="mb-2 p-2 text-xs rounded-md bg-primary/20">
+                             <p className="font-bold">Context:</p>
+                             <p className="line-clamp-2">{message.contextTitle}</p>
+                           </div>
+                        )}
                         <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     </div>
                      {message.role === 'user' && (
@@ -276,14 +339,27 @@ export default function TeachingAssistantPage() {
         <div className="py-4">
           <form onSubmit={handleSubmit(onSubmit)} className="flex items-start gap-2">
             <div className="relative flex-grow">
-                 {mediaPreview && (
+                 {(mediaPreview || selectedContext) && (
                     <div className="absolute bottom-12 left-0 p-2">
+                      {mediaPreview && (
                         <div className="relative">
                             <Image src={mediaPreview} alt="media preview" width={48} height={48} className="rounded-md border aspect-square object-cover" />
                             <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground" onClick={removeMedia}>
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
+                      )}
+                      {selectedContext && (
+                         <div className="relative">
+                           <Badge variant="secondary" className="p-2 h-auto">
+                              <Book className="mr-2 h-4 w-4" />
+                              <span className="line-clamp-1">{selectedContext.title}</span>
+                           </Badge>
+                           <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground" onClick={removeContext}>
+                               <X className="h-4 w-4" />
+                           </Button>
+                        </div>
+                      )}
                     </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -303,14 +379,24 @@ export default function TeachingAssistantPage() {
                                     Upload Media
                                 </Button>
                                 <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} accept={ACCEPTED_IMAGE_TYPES.join(",")} />
-                                <DialogClose asChild>
-                                    <Button asChild variant="outline">
-                                        <Link href="/content-library">
-                                            <Book className="mr-2 h-5 w-5" />
-                                            Choose from Library
-                                        </Link>
-                                    </Button>
-                                </DialogClose>
+                                
+                                <Select onValueChange={handleLibrarySelect}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Choose from Library" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {libraryContent.length > 0 ? (
+                                      libraryContent.map(item => (
+                                        <SelectItem key={item.id} value={item.id}>
+                                          {item.prompt}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <div className="p-4 text-sm text-center text-muted-foreground">No content in library.</div>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+
                             </div>
                         </DialogContent>
                     </Dialog>
