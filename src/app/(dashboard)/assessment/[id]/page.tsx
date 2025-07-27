@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAssessmentAction } from '@/app/actions';
 import { type Question } from '@/ai/flows/generate-assessment-questions';
+import { Badge } from '@/components/ui/badge';
 
 interface AssessmentDetails extends Question {
   id: string;
@@ -49,7 +50,7 @@ export default function TakeAssessmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  const { register, control, handleSubmit, formState: { errors } } = useForm<FormFields>({
+  const { register, control, handleSubmit, setValue, formState: { errors } } = useForm<FormFields>({
     resolver: zodResolver(formSchema),
     defaultValues: { answers: [] }
   });
@@ -92,7 +93,7 @@ export default function TakeAssessmentPage() {
         answer: '',
       })));
     }
-  }, [assessment, fields, setValue]);
+  }, [assessment, fields.length, setValue]);
 
 
   useEffect(() => {
@@ -120,8 +121,9 @@ export default function TakeAssessmentPage() {
             assessmentId: id as string,
             assessmentTopic: assessment.topic,
             submittedAnswers: data.answers.map((a, index) => ({
-                ...a,
+                questionId: a.questionId,
                 question: assessment.questions[index].text,
+                answer: a.answer,
                 correctAnswer: assessment.questions[index].answer,
                 difficulty: assessment.questions[index].difficulty,
                 tags: assessment.questions[index].tags,

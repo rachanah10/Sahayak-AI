@@ -134,7 +134,7 @@ export default function ViewAssessmentsPage() {
       }
     });
 
-    return { currentAssessments: current, completedAssessments: completed };
+    return { currentAssessments: current.sort((a, b) => new Date(b.createdAt.seconds * 1000).getTime() - new Date(a.createdAt.seconds * 1000).getTime()), completedAssessments: completed.sort((a, b) => new Date(b.createdAt.seconds * 1000).getTime() - new Date(a.createdAt.seconds * 1000).getTime()) };
   }, [assessments, user]);
 
   if (isLoading) {
