@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -21,7 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { CalendarDays, Lightbulb } from "lucide-react";
+import { CalendarDays, Lightbulb, Edit, CheckCircle } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { CreateWeeklyLessonPlanInput } from "@/ai/flows/create-weekly-lesson-plan";
 import { DateRange } from "react-day-picker";
@@ -48,6 +49,7 @@ export default function LessonPlannerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [lessonPlan, setLessonPlan] = useState("");
+  const [isPlanFinalized, setIsPlanFinalized] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   
@@ -73,6 +75,7 @@ export default function LessonPlannerPage() {
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     setIsLoading(true);
     setLessonPlan("");
+    setIsPlanFinalized(false);
     try {
       const payload: CreateWeeklyLessonPlanInput = {
         ...data,
@@ -238,21 +241,47 @@ export default function LessonPlannerPage() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Generated Lesson Plan</CardTitle>
+                    {lessonPlan && (
+                       isPlanFinalized ? (
+                         <Button variant="outline" size="sm" onClick={() => setIsPlanFinalized(false)}>
+                            <Edit className="mr-2" />
+                            Edit Plan
+                        </Button>
+                       ) : (
+                        <Button variant="default" size="sm" onClick={() => setIsPlanFinalized(true)}>
+                            <CheckCircle className="mr-2" />
+                            Finalize Plan
+                        </Button>
+                       )
+                    )}
                 </div>
                 <CardDescription>Review and edit the generated plan below. You can view saved plans in the main Calendar page.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading && (
-                <div className="flex justify-center items-center h-40">
-                    <Spinner className="w-8 h-8" />
-                </div>
+                    <div className="flex justify-center items-center h-96">
+                        <Spinner className="w-8 h-8" />
+                    </div>
                 )}
-                <Textarea
-                    value={lessonPlan}
-                    onChange={(e) => setLessonPlan(e.target.value)}
-                    placeholder="Your generated lesson plan will appear here..."
-                    className="min-h-96"
-                />
+                {!isLoading && lessonPlan && (
+                    isPlanFinalized ? (
+                        <div className="p-4 border rounded-md prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap min-h-96">
+                           {lessonPlan}
+                        </div>
+                    ) : (
+                        <Textarea
+                            value={lessonPlan}
+                            onChange={(e) => setLessonPlan(e.target.value)}
+                            placeholder="Your generated lesson plan will appear here..."
+                            className="min-h-96"
+                        />
+                    )
+                )}
+                 {!isLoading && !lessonPlan && (
+                    <div className="flex justify-center items-center h-96 text-muted-foreground">
+                        <p>Your generated lesson plan will appear here.</p>
+                    </div>
+                 )}
             </CardContent>
         </Card>
       </div>
