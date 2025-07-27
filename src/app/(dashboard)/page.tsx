@@ -82,6 +82,13 @@ const allFeatures: Feature[] = [
     Icon: CalendarDays,
     roles: ['teacher', 'admin'],
   },
+   {
+    title: "Calendar",
+    description: "View your lesson plans and events in a calendar view.",
+    href: "/calendar",
+    Icon: CalendarDays,
+    roles: ['teacher', 'admin'],
+  },
   {
     title: "Student Progress",
     description: "Visualize student performance and track assessment history.",

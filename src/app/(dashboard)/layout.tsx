@@ -54,6 +54,7 @@ const allMenuItems = [
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck, roles: ['teacher', 'admin'] },
   { href: "/view-assessments", label: "View Assessments", Icon: Users, roles: ['teacher', 'admin'] },
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays, roles: ['teacher', 'admin'] },
+  { href: "/calendar", label: "Calendar", Icon: CalendarDays, roles: ['teacher', 'admin'] },
   { href: "/progress-tracker", label: "Student Progress", Icon: BarChart3, roles: ['teacher', 'student', 'admin'] },
   { href: "/signup", label: "Add User", Icon: UserPlus, roles: ['admin'] },
 ];

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format, parse, startOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,9 +25,7 @@ import { CalendarDays, Lightbulb } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { CreateWeeklyLessonPlanInput } from "@/ai/flows/create-weekly-lesson-plan";
 import { DateRange } from "react-day-picker";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { CalendarView, type CalendarEvent } from "@/components/calendar-view";
 
 const grades = Array.from({ length: 10 }, (_, i) => `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade`);
 
@@ -52,15 +50,12 @@ export default function LessonPlannerPage() {
   const [lessonPlan, setLessonPlan] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
-
+  
   const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
-    control,
     watch,
     getValues,
     setValue,
@@ -136,37 +131,6 @@ export default function LessonPlannerPage() {
         if (newSet.has(tag)) newSet.delete(tag);
         else newSet.add(tag);
         return newSet;
-    });
-  };
-  
-  const parseAndAddEvents = () => {
-    if (!lessonPlan) return;
-    const lines = lessonPlan.split('\n');
-    const newEvents: CalendarEvent[] = [];
-    let currentDate: Date | null = null;
-    let currentContent: string[] = [];
-
-    lines.forEach(line => {
-        const match = line.match(/^(\d{4}-\d{2}-\d{2}):\s*(.*)/);
-        if (match) {
-            if (currentDate && currentContent.length > 0) {
-                newEvents.push({ date: currentDate, title: currentContent[0], description: currentContent.slice(1).join('\n') });
-            }
-            currentDate = parse(match[1], 'yyyy-MM-dd', new Date());
-            currentContent = [match[2]];
-        } else if (currentDate) {
-            currentContent.push(line);
-        }
-    });
-    
-    if (currentDate && currentContent.length > 0) {
-        newEvents.push({ date: currentDate, title: currentContent[0], description: currentContent.slice(1).join('\n') });
-    }
-
-    setCalendarEvents(prev => [...prev, ...newEvents]);
-    toast({
-        title: "Plan Added to Calendar",
-        description: "Your lesson plan has been added to the calendar view."
     });
   };
 
@@ -270,53 +234,27 @@ export default function LessonPlannerPage() {
       </div>
 
       <div className="lg:col-span-2 lg:sticky top-24">
-        <Tabs defaultValue="plan">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="plan">Generated Plan</TabsTrigger>
-                <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-            </TabsList>
-            <TabsContent value="plan">
-                <Card className="min-h-[600px]">
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <CardTitle>Generated Lesson Plan</CardTitle>
-                             {lessonPlan && (
-                                <Button onClick={parseAndAddEvents}>Add to Calendar</Button>
-                             )}
-                        </div>
-                        <CardDescription>Review and edit the generated plan below.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading && (
-                        <div className="flex justify-center items-center h-40">
-                            <Spinner className="w-8 h-8" />
-                        </div>
-                        )}
-                        <Textarea
-                            value={lessonPlan}
-                            onChange={(e) => setLessonPlan(e.target.value)}
-                            placeholder="Your generated lesson plan will appear here..."
-                            className="min-h-96"
-                        />
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="calendar">
-                <Card className="min-h-[600px]">
-                    <CardHeader>
-                         <CardTitle>Lesson Calendar</CardTitle>
-                         <CardDescription>Your saved lesson plans are shown here.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <CalendarView
-                            events={calendarEvents}
-                            month={currentMonth}
-                            setMonth={setCurrentMonth}
-                        />
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
+        <Card className="min-h-[600px]">
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle>Generated Lesson Plan</CardTitle>
+                </div>
+                <CardDescription>Review and edit the generated plan below. You can view saved plans in the main Calendar page.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoading && (
+                <div className="flex justify-center items-center h-40">
+                    <Spinner className="w-8 h-8" />
+                </div>
+                )}
+                <Textarea
+                    value={lessonPlan}
+                    onChange={(e) => setLessonPlan(e.target.value)}
+                    placeholder="Your generated lesson plan will appear here..."
+                    className="min-h-96"
+                />
+            </CardContent>
+        </Card>
       </div>
     </div>
   );
