@@ -23,12 +23,9 @@ import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
 async function getCurrentUserId(): Promise<string> {
     initAdmin();
     // In a real app, you'd get this from the session.
-    // For this prototype, we'll get the first user as a stand-in.
-    const user = await getAuth().listUsers(1);
-    if(user.users.length > 0) {
-        return user.users[0].uid;
-    }
-    throw new Error("No users found.");
+    // For this prototype, we'll use a hardcoded UID to avoid permission issues with listUsers.
+    // This corresponds to the first pre-seeded user.
+    return "erYvJ848w6hSFjvPBfOA5zwqLK72";
 }
 
 
