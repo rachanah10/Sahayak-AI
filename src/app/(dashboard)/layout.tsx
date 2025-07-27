@@ -45,6 +45,7 @@ const menuItems = [
   { href: "/homework", label: "Homework", Icon: NotebookTabs },
   { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare },
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck },
+  { href: "/view-assessments", label: "View Assessments", Icon: Users },
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays },
   { href: "/visual-aid", label: "Visual Aid Generator", Icon: ImageIcon },
   { href: "/progress-tracker", label: "Progress Tracker", Icon: Users },
@@ -139,8 +140,8 @@ export default function DashboardLayout({
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
                 <SheetHeader className="p-6 pb-2">
-                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                  <SheetDescription className="sr-only">Main navigation links for the application.</SheetDescription>
+                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                   <SheetDescription className="sr-only">Main navigation links for the application.</SheetDescription>
                   <Link href="/" className="flex items-center gap-2 font-semibold">
                     <Logo className="h-6 w-6" />
                     <span>Sahayak</span>

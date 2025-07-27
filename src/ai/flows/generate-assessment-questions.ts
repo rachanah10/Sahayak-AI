@@ -12,17 +12,20 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateAssessmentQuestionsInputSchema = z.object({
-  topic: z.string().describe('The topic for which assessment questions are to be generated.'),
-  lessonPlan: z.string().optional().describe('Optional lesson plan to use as context.'),
+  subject: z.string().describe('The subject for the assessment (e.g., Math, Science).'),
+  topic: z.string().describe('The topic or chapter for which assessment questions are to be generated.'),
+  grade: z.string().describe('The grade level for the students.'),
   numQuestions: z.number().default(5).describe('The number of assessment questions to generate.'),
-  type: z.enum(['oral', 'written', 'both']).default('both').describe('The type of assessment questions to generate.'),
+  questionType: z.enum(['Multiple Choice', 'Fill in the Blanks', 'Short Answer', 'Mix']).default('Mix').describe('The type of assessment questions to generate.'),
+  timer: z.number().optional().describe('The time limit for the test in minutes.'),
+  deadline: z.string().optional().describe('The deadline for the test.'),
 });
 
 export type GenerateAssessmentQuestionsInput = z.infer<typeof GenerateAssessmentQuestionsInputSchema>;
 
 const GenerateAssessmentQuestionsOutputSchema = z.object({
-  oralQuestions: z.array(z.string()).optional().describe('Generated oral assessment questions.'),
-  writtenQuestions: z.array(z.string()).optional().describe('Generated written assessment questions.'),
+  testContent: z.string().describe("The generated test content with questions."),
+  answerKey: z.string().describe("The generated answer key for the teacher."),
 });
 
 export type GenerateAssessmentQuestionsOutput = z.infer<typeof GenerateAssessmentQuestionsOutputSchema>;
@@ -39,30 +42,29 @@ const prompt = ai.definePrompt({
   output: {
     schema: GenerateAssessmentQuestionsOutputSchema,
   },
-  prompt: `You are an expert teacher specializing in creating effective assessment questions. Based on the given topic and optional lesson plan, generate a set of assessment questions.
+  prompt: `You are an expert teacher specializing in creating comprehensive and grade-appropriate assessments. Generate a test and a corresponding answer key based on the following details.
 
-Topic: {{{topic}}}
-
-Lesson Plan: {{{lessonPlan}}}
-
+Subject: {{{subject}}}
+Topic/Chapter: {{{topic}}}
+Grade: {{{grade}}}
 Number of Questions: {{{numQuestions}}}
-
-Type of Questions: {{{type}}}
-
-{{#if (eq type \"oral\")}}
-Only generate oral questions.
+Type of Questions: {{{questionType}}}
+{{#if timer}}
+Time Limit: {{{timer}}} minutes
 {{/if}}
 
-{{#if (eq type \"written\")}}
-Only generate written questions.
-{{/if}}
+Instructions for the Test:
+- Create a clear and well-structured test.
+- The questions should be diverse if 'Mix' is chosen, otherwise stick to the specified question type.
+- Ensure the difficulty is appropriate for the specified grade level.
+- Format the test cleanly.
 
-{{#if (eq type \"both\")}}
-Generate both oral and written questions.
-{{/if}}
+Instructions for the Answer Key:
+- Create a separate, clear, and accurate answer key for all the questions in the test.
+- Label it clearly as "Answer Key".
 
-Make sure the questions are tailored to assess student understanding of the topic and are appropriate for the given lesson plan, if provided.
-`, // Changed from system to prompt
+Generate the test content and the answer key as two separate outputs.
+`,
 });
 
 const generateAssessmentQuestionsFlow = ai.defineFlow(
