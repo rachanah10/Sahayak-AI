@@ -11,6 +11,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { initAdmin } from "@/lib/firebase-admin";
 import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
 
+const FIRESTORE_FIELD_MAX_SIZE = 1048487; // 1 MiB in bytes
 
 export async function saveToContentLibrary(input: SaveToContentLibraryInput, userId: string): Promise<{ id: string }> {
   if (!userId) {
@@ -40,6 +41,13 @@ export async function saveToContentLibrary(input: SaveToContentLibraryInput, use
     } else if (input.type === 'Homework') {
         docData.worksheet = input.content;
     }
+  }
+
+  // Check if imageUrl exceeds Firestore's limit and remove it if it does.
+  // This is a temporary fix to prevent crashes.
+  if (docData.imageUrl && docData.imageUrl.length > FIRESTORE_FIELD_MAX_SIZE) {
+    console.warn(`Image for prompt "${docData.prompt}" is too large to save in Firestore. Skipping image.`);
+    delete docData.imageUrl;
   }
 
 
