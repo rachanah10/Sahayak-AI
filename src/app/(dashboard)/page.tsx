@@ -19,6 +19,7 @@ import {
   Library,
   GraduationCap,
   BarChart3,
+  BookCheck,
   type LucideIcon
 } from "lucide-react";
 import React from 'react';
@@ -81,6 +82,13 @@ const allFeatures: Feature[] = [
     href: "/view-assessments",
     Icon: ClipboardCheck,
     roles: ['teacher', 'student', 'admin'],
+  },
+   {
+    title: "Revision",
+    description: "Practice with questions tailored to your areas of improvement.",
+    href: "/revision",
+    Icon: BookCheck,
+    roles: ['student', 'admin'],
   },
   {
     title: "Lesson Planner",

@@ -22,6 +22,7 @@ import {
   BarChart3,
   Moon,
   Sun,
+  BookCheck,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ const allMenuItems = [
   { href: "/studying-assistant", label: "Studying Assistant", Icon: GraduationCap, roles: ['student', 'admin'] },
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck, roles: ['teacher', 'admin'] },
   { href: "/view-assessments", label: "View Assessments", Icon: ClipboardCheck, roles: ['teacher', 'student', 'admin'] },
+  { href: "/revision", label: "Revision", Icon: BookCheck, roles: ['student', 'admin'] },
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays, roles: ['teacher', 'admin'] },
   { href: "/calendar", label: "Calendar", Icon: CalendarDays, roles: ['teacher', 'admin'] },
   { href: "/progress-tracker", label: "Student Progress", Icon: BarChart3, roles: ['teacher', 'student', 'admin'] },
