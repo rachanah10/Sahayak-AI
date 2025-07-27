@@ -10,6 +10,7 @@ export interface AuthUser extends User {
   is_admin?: boolean;
   name?: string;
   role?: 'teacher' | 'student';
+  grade?: string;
 }
 
 export interface AuthContextType {
@@ -31,13 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUser({ ...firebaseUser, ...userData, is_admin: userData.is_admin || false, role: userData.role });
+          setUser({ 
+            ...firebaseUser, 
+            ...userData, 
+            is_admin: userData.is_admin || false, 
+            role: userData.role,
+            grade: userData.grade,
+          });
         } else {
-          setUser({ ...firebaseUser, is_admin: false, role: undefined });
+          setUser({ ...firebaseUser, is_admin: false });
         }
       } catch (error) {
         console.error("Error fetching user document:", error);
-        setUser({ ...firebaseUser, is_admin: false, role: undefined });
+        setUser({ ...firebaseUser, is_admin: false });
       }
     } else {
       setUser(null);

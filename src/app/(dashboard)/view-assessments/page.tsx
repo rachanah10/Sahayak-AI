@@ -80,12 +80,16 @@ export default function ViewAssessmentsPage() {
               collection(db, "assessments"),
               where("grade", "==", user.grade)
             );
-        } else {
-            q = query(
+        } else if (user.role === 'teacher' || user.is_admin) {
+             q = query(
               collection(db, "assessments"),
               where("userId", "==", user.uid),
               orderBy("createdAt", "desc")
             );
+        } else {
+            setAssessments([]);
+            setIsLoading(false);
+            return;
         }
         
         const querySnapshot = await getDocs(q);

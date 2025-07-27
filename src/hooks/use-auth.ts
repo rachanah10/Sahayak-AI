@@ -9,6 +9,7 @@ export interface AuthUser extends User {
   is_admin?: boolean;
   name?: string;
   role?: 'teacher' | 'student';
+  grade?: string;
 }
 
 export function useAuth(): AuthContextType {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -43,7 +44,7 @@ const schema = z.object({
   school: z.string().min(2, "Please enter a school name."),
   schoolId: z.string().min(1, "Please enter a school ID."),
   schoolIdDbLocation: z.string().min(1, "Please enter the DB location."),
-  grade: z.string().min(1, "Please enter a grade."),
+  grade: z.string().min(1, "Please select a grade."),
 });
 
 type FormFields = z.infer<typeof schema>;
@@ -58,10 +59,13 @@ export default function SignUpPage() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
   });
+
+  const formValues = watch();
   
   React.useEffect(() => {
     if (!loading && !user?.is_admin) {
@@ -157,7 +161,7 @@ export default function SignUpPage() {
                 <Label>I am a...</Label>
                 <Select onValueChange={(value) => setValue("role", value as "teacher" | "student")}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
+                    <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="teacher">Teacher</SelectItem>
@@ -165,6 +169,18 @@ export default function SignUpPage() {
                   </SelectContent>
                 </Select>
                  {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
+            </div>
+             <div className="space-y-2">
+                <Label>Grade</Label>
+                <Select onValueChange={(value) => setValue("grade", value)} defaultValue={formValues.grade}>
+                    <SelectTrigger><SelectValue placeholder="Select a grade"/></SelectTrigger>
+                    <SelectContent>
+                        {Array.from({length: 10}, (_, i) => `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade`).map(grade => (
+                            <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                {errors.grade && <p className="text-sm text-destructive">{errors.grade.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="school">School</Label>
@@ -180,11 +196,6 @@ export default function SignUpPage() {
               <Label htmlFor="schoolIdDbLocation">School ID DB Location</Label>
               <Input id="schoolIdDbLocation" {...register("schoolIdDbLocation")} />
               {errors.schoolIdDbLocation && <p className="text-sm text-destructive">{errors.schoolIdDbLocation.message}</p>}
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="grade">Grade</Label>
-              <Input id="grade" {...register("grade")} />
-              {errors.grade && <p className="text-sm text-destructive">{errors.grade.message}</p>}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
