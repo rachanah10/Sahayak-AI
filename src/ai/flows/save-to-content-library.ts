@@ -13,9 +13,6 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { initFirebaseAdmin } from "@/lib/firebase-admin";
 
-// Ensure Firebase Admin is initialized
-initFirebaseAdmin();
-
 export const SaveToContentLibraryInputSchema = z.object({
   prompt: z.string().describe("The original prompt for the content."),
   grade: z.string().describe("The grade level for the content."),
@@ -41,6 +38,8 @@ export async function saveToContentLibrary(input: SaveToContentLibraryInput, use
     throw new Error("User must be authenticated to save to the library.");
   }
   
+  // Ensure Firebase Admin is initialized
+  initFirebaseAdmin();
   const db = getFirestore();
   const docRef = await db.collection('content-library').add({
     ...input,

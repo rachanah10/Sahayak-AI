@@ -12,9 +12,6 @@ import { z } from 'genkit';
 import { getFirestore } from "firebase-admin/firestore";
 import { initFirebaseAdmin } from "@/lib/firebase-admin";
 
-// Ensure Firebase Admin is initialized
-initFirebaseAdmin();
-
 export const SaveAssessmentInputSchema = z.object({
   subject: z.string(),
   topic: z.string(),
@@ -36,6 +33,8 @@ export async function saveAssessment(input: SaveAssessmentInput, userId: string)
     throw new Error("User must be authenticated to save an assessment.");
   }
   
+  // Ensure Firebase Admin is initialized
+  initFirebaseAdmin();
   const db = getFirestore();
   const docRef = await db.collection('assessments').add({
     ...input,
