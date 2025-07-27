@@ -249,7 +249,7 @@ export default function AssessmentGeneratorPage() {
             topic: topicToSave,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
             questions: editedAssessment.questions,
-        });
+        }, user.uid);
         toast({
             title: "Test Saved & Published!",
             description: "The assessment has been saved and is available for students."
