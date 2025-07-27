@@ -52,7 +52,7 @@ const allMenuItems = [
   { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare, roles: ['teacher', 'admin'] },
   { href: "/studying-assistant", label: "Studying Assistant", Icon: GraduationCap, roles: ['student', 'admin'] },
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck, roles: ['teacher', 'admin'] },
-  { href: "/view-assessments", label: "View Assessments", Icon: ClipboardCheck, roles: ['teacher', 'admin'] },
+  { href: "/view-assessments", label: "View Assessments", Icon: ClipboardCheck, roles: ['teacher', 'student', 'admin'] },
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays, roles: ['teacher', 'admin'] },
   { href: "/calendar", label: "Calendar", Icon: CalendarDays, roles: ['teacher', 'admin'] },
   { href: "/progress-tracker", label: "Student Progress", Icon: BarChart3, roles: ['teacher', 'student', 'admin'] },

@@ -1,4 +1,5 @@
 
+
 "use server";
 
 import {
@@ -14,8 +15,10 @@ import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/ai/
 import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
 import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 import { saveAssessment } from "@/ai/flows/save-assessment";
+import { saveStudentAssessment } from "@/ai/flows/save-student-assessment";
 import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
 import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
+import type { SaveStudentAssessmentInput } from "@/ai/schemas/save-student-assessment-schemas";
 
 
 export {
@@ -40,4 +43,8 @@ export async function saveToContentLibraryAction(input: SaveToContentLibraryInpu
 
 export async function saveAssessmentAction(input: SaveAssessmentInput, userId: string) {
     return saveAssessment(input, userId);
+}
+
+export async function saveStudentAssessmentAction(input: SaveStudentAssessmentInput) {
+    return saveStudentAssessment(input);
 }

@@ -2,8 +2,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, and } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { PageHeader } from "@/components/page-header";
 import { ClipboardCheck } from "lucide-react";
@@ -18,6 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isPast, parse } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 interface Assessment {
   id: string;
@@ -29,7 +32,7 @@ interface Assessment {
   createdAt: any;
 }
 
-const AssessmentCard = ({ assessment }: { assessment: Assessment }) => (
+const AssessmentCard = ({ assessment, isStudent }: { assessment: Assessment, isStudent: boolean }) => (
   <Card key={assessment.id} className="flex flex-col">
     <CardHeader>
       <CardTitle className="line-clamp-2 text-lg">{assessment.topic}</CardTitle>
@@ -41,6 +44,15 @@ const AssessmentCard = ({ assessment }: { assessment: Assessment }) => (
       {assessment.timer && <Badge variant="secondary">Timer: {assessment.timer} mins</Badge>}
       {assessment.deadline && <Badge variant="outline">Deadline: {assessment.deadline}</Badge>}
     </CardContent>
+    {isStudent && (
+        <CardContent>
+             <Button asChild>
+                <Link href={`/assessment/${assessment.id}`}>
+                    Start Assessment <ArrowRight className="ml-2" />
+                </Link>
+            </Button>
+        </CardContent>
+    )}
   </Card>
 );
 
@@ -62,11 +74,20 @@ export default function ViewAssessmentsPage() {
       if (!user) return;
       setIsLoading(true);
       try {
-        const q = query(
-          collection(db, "assessments"),
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
-        );
+        let q;
+        if (user.role === 'student') {
+            q = query(
+              collection(db, "assessments"),
+              where("grade", "==", user.grade)
+            );
+        } else {
+            q = query(
+              collection(db, "assessments"),
+              where("userId", "==", user.uid),
+              orderBy("createdAt", "desc")
+            );
+        }
+        
         const querySnapshot = await getDocs(q);
         const content = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -75,7 +96,6 @@ export default function ViewAssessmentsPage() {
         setAssessments(content);
       } catch (error) {
         console.error("Error fetching assessments: ", error);
-        // Optionally, show a toast message
       } finally {
         setIsLoading(false);
       }
@@ -90,8 +110,6 @@ export default function ViewAssessmentsPage() {
 
     assessments.forEach(assessment => {
       if (assessment.deadline) {
-        // The deadline is in "Month Day, YYYY" format, e.g., "August 15, 2024"
-        // 'PPP' format token in date-fns matches this format.
         try {
             const deadlineDate = parse(assessment.deadline, "PPP", new Date());
             if (isPast(deadlineDate)) {
@@ -100,17 +118,20 @@ export default function ViewAssessmentsPage() {
                 current.push(assessment);
             }
         } catch (e) {
-            // If parsing fails, assume it's completed to be safe
              completed.push(assessment);
         }
       } else {
-        // Assessments without a deadline are considered completed/archived
-        completed.push(assessment);
+        // For students, no-deadline tests are always current. For teachers, they are completed/archived.
+        if(user?.role === 'student') {
+            current.push(assessment);
+        } else {
+            completed.push(assessment);
+        }
       }
     });
 
     return { currentAssessments: current, completedAssessments: completed };
-  }, [assessments]);
+  }, [assessments, user]);
 
   if (isLoading) {
     return (
@@ -155,7 +176,7 @@ export default function ViewAssessmentsPage() {
             {currentAssessments.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
                     {currentAssessments.map(assessment => (
-                        <AssessmentCard key={assessment.id} assessment={assessment} />
+                        <AssessmentCard key={assessment.id} assessment={assessment} isStudent={user?.role === 'student'} />
                     ))}
                 </div>
             ) : (
@@ -166,7 +187,7 @@ export default function ViewAssessmentsPage() {
            {completedAssessments.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
                     {completedAssessments.map(assessment => (
-                        <AssessmentCard key={assessment.id} assessment={assessment} />
+                         <AssessmentCard key={assessment.id} assessment={assessment} isStudent={user?.role === 'student'} />
                     ))}
                 </div>
             ) : (
