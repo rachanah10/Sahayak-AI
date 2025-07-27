@@ -1,25 +1,45 @@
+import "server-only";
 
-import admin from 'firebase-admin';
-import { getApps } from 'firebase-admin/app';
+import admin from "firebase-admin";
 
-// This function initializes Firebase Admin SDK.
-// It checks if an app is already initialized to prevent errors.
-export function initFirebaseAdmin() {
-  if (!getApps().length) {
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-        // In a real application, you should throw an error here.
-        // For the development environment, we can log a warning.
-        console.warn('FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK will not be initialized.');
-        return;
-    }
-    
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert(JSON.parse(serviceAccountKey)),
-        });
-    } catch (e) {
-        console.error('Failed to initialize Firebase Admin SDK', e);
-    }
+interface FirebaseAdminAppParams {
+  projectId: string;
+  clientEmail: string;
+  storageBucket: string;
+  privateKey: string;
+}
+
+function formatPrivateKey(key: string) {
+  return key.replace(/\\n/g, "\n");
+}
+
+export function createFirebaseAdminApp(params: FirebaseAdminAppParams) {
+  const privateKey = formatPrivateKey(params.privateKey);
+
+  if (admin.apps.length > 0) {
+    return admin.app();
   }
+
+  const cert = admin.credential.cert({
+    projectId: params.projectId,
+    clientEmail: params.clientEmail,
+    privateKey,
+  });
+
+  return admin.initializeApp({
+    credential: cert,
+    projectId: params.projectId,
+    storageBucket: params.storageBucket,
+  });
+}
+
+export async function initAdmin() {
+  const params = {
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID as string,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL as string,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET as string,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY as string,
+  };
+
+  return createFirebaseAdminApp(params);
 }
