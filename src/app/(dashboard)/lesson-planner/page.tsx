@@ -27,6 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import type { CreateWeeklyLessonPlanInput } from "@/ai/flows/create-weekly-lesson-plan";
 import { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
+import ReactMarkdown from "react-markdown";
 
 const grades = Array.from({ length: 10 }, (_, i) => `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade`);
 
@@ -265,8 +266,8 @@ export default function LessonPlannerPage() {
                 )}
                 {!isLoading && lessonPlan && (
                     isPlanFinalized ? (
-                        <div className="p-4 border rounded-md prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap min-h-96">
-                           {lessonPlan}
+                        <div className="p-4 border rounded-md prose prose-sm dark:prose-invert max-w-none min-h-96">
+                           <ReactMarkdown>{lessonPlan}</ReactMarkdown>
                         </div>
                     ) : (
                         <Textarea
