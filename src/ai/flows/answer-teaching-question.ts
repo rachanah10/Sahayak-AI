@@ -25,6 +25,12 @@ const AnswerTeachingQuestionInputSchema = z.object({
   question: z.string().describe('The user\'s current teaching-related question.'),
   history: z.array(MessageSchema).optional().describe('The history of the conversation.'),
   context: z.string().optional().describe('Optional context from an uploaded document or library item.'),
+   mediaDataUri: z
+    .string()
+    .optional()
+    .describe(
+      "An optional image file, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 export type AnswerTeachingQuestionInput = z.infer<typeof AnswerTeachingQuestionInputSchema>;
 
@@ -47,7 +53,7 @@ const answerPrompt = ai.definePrompt({
   input: { schema: AnswerTeachingQuestionInputSchema },
   output: { schema: z.object({ answer: z.string() }) },
   prompt: `You are a helpful and friendly teaching assistant. Your name is Sahayak.
-Continue the conversation with the user and answer their question based on the chat history and any provided context. Keep your answers clear and concise.
+Continue the conversation with the user and answer their question based on the chat history and any provided context or media. Keep your answers clear and concise.
 
 {{#if context}}
 Use the following context to help answer the user's question:
@@ -64,6 +70,9 @@ Chat History:
 {{/if}}
 
 Current Question: {{{question}}}
+{{#if mediaDataUri}}
+Analyze this image to help answer the question: {{media url=mediaDataUri}}
+{{/if}}
 `,
 });
 
