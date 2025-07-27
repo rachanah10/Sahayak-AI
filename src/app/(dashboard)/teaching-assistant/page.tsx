@@ -41,6 +41,7 @@ export default function TeachingAssistantPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechRecognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, setValue, getValues } = useForm<FormFields>({
     resolver: zodResolver(schema),
@@ -221,10 +222,11 @@ export default function TeachingAssistantPage() {
                         <DialogTitle>Add Context</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <Button variant="outline">
+                        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
                             <Upload className="mr-2 h-5 w-5" />
                             Upload Media
                         </Button>
+                        <input type="file" ref={fileInputRef} className="hidden" />
                         <Button asChild variant="outline">
                             <Link href="/content-library">
                                 <Book className="mr-2 h-5 w-5" />
