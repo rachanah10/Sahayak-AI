@@ -32,12 +32,14 @@ import { PageHeader } from "@/components/page-header";
 import { ClipboardCheck, CalendarIcon, Key, FileText, CheckCircle, Save, Lightbulb } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import type { GenerateAssessmentQuestionsOutput, GenerateAssessmentQuestionsInput } from "@/ai/flows/generate-assessment-questions";
+import type { GenerateAssessmentQuestionsOutput, Question } from "@/ai/flows/generate-assessment-questions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -183,9 +185,8 @@ export default function AssessmentGeneratorPage() {
     setAssessment(null);
     setIsPublished(false);
     try {
-      let payload: GenerateAssessmentQuestionsInput = {
+      const payload: any = {
         ...data,
-        deadline: data.deadline ? format(data.deadline, "PPP") : undefined,
         tags: Array.from(selectedTags),
       };
 
@@ -213,15 +214,7 @@ export default function AssessmentGeneratorPage() {
     }
   };
   
-  const handlePublish = () => {
-    setIsPublished(true);
-    toast({
-        title: "Test Published!",
-        description: "The assessment is now available for students."
-    })
-  }
-  
-  const handleSave = async () => {
+  const handlePublish = async () => {
     if(!assessment || !formValues.topic || !formValues.subject) return;
     setIsSaving(true);
     try {
@@ -230,13 +223,13 @@ export default function AssessmentGeneratorPage() {
             topic: formValues.topic,
             subject: formValues.subject,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
-            testContent: assessment.testContent,
-            answerKey: assessment.answerKey,
+            questions: assessment.questions,
         })
         toast({
-            title: "Test Saved!",
-            description: "The assessment has been saved to your library."
+            title: "Test Saved & Published!",
+            description: "The assessment has been saved and is available for students."
         })
+        setIsPublished(true);
     } catch (error) {
          console.error(error);
          toast({
@@ -427,35 +420,43 @@ export default function AssessmentGeneratorPage() {
             <>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Generated Assessment</CardTitle>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={handleSave} disabled={isSaving || !formValues.subject || !formValues.topic}>
-                            {isSaving ? <Spinner className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
-                            Save
-                        </Button>
-                        <Button size="sm" onClick={handlePublish} disabled={isPublished}>
-                            {isPublished ? <CheckCircle className="mr-2 h-4 w-4" /> : null}
-                            {isPublished ? 'Published' : 'Publish'}
-                        </Button>
+                    <div>
+                        <CardTitle>{assessment.testTitle}</CardTitle>
+                        <CardDescription>{formValues.grade} &bull; {formValues.numQuestions} Questions</CardDescription>
                     </div>
+                    <Button size="sm" onClick={handlePublish} disabled={isPublished || isSaving}>
+                        {isSaving ? <Spinner className="mr-2 h-4 w-4" /> : isPublished ? <CheckCircle className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+                        {isPublished ? 'Published' : 'Save & Publish'}
+                    </Button>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="test" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="test"><FileText className="mr-2 h-4 w-4" /> Test</TabsTrigger>
-                            <TabsTrigger value="key"><Key className="mr-2 h-4 w-4"/>Answer Key</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="test">
-                            <div className="p-4 border rounded-b-md prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-                                {assessment.testContent}
-                            </div>
-                        </TabsContent>
-                         <TabsContent value="key">
-                            <div className="p-4 border rounded-b-md prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-                                {assessment.answerKey}
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                   <Accordion type="single" collapsible className="w-full">
+                        {assessment.questions.map(q => (
+                            <AccordionItem value={`item-${q.no}`} key={q.no}>
+                                <AccordionTrigger>Question {q.no}: {q.text}</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="font-semibold text-primary">Answer:</p>
+                                            <p>{q.answer}</p>
+                                        </div>
+                                         <div>
+                                            <p className="font-semibold">Difficulty:</p>
+                                            <p>{q.difficulty}/5</p>
+                                        </div>
+                                         <div>
+                                            <p className="font-semibold">Tags:</p>
+                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                {q.tags.map(tag => (
+                                                    <Badge key={tag} variant="secondary">{tag}</Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                   </Accordion>
                 </CardContent>
             </Card>
             </>

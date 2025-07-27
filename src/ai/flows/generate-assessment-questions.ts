@@ -48,9 +48,19 @@ const GenerateAssessmentQuestionsInputSchema = z.object({
 });
 export type GenerateAssessmentQuestionsInput = z.infer<typeof GenerateAssessmentQuestionsInputSchema>;
 
+// New schemas for structured questions
+const QuestionSchema = z.object({
+    no: z.string().describe("Question number, e.g., '1'"),
+    text: z.string().describe("The text of the question."),
+    answer: z.string().describe("The correct answer to the question."),
+    difficulty: z.number().min(1).max(5).describe("Difficulty rating from 1 (easy) to 5 (hard)."),
+    tags: z.array(z.string()).describe("Relevant tags for the question."),
+});
+export type Question = z.infer<typeof QuestionSchema>;
+
 const GenerateAssessmentQuestionsOutputSchema = z.object({
-  testContent: z.string().describe("The generated test content with questions."),
-  answerKey: z.string().describe("The generated answer key for the teacher."),
+  questions: z.array(QuestionSchema).describe("A list of generated assessment questions."),
+  testTitle: z.string().describe("A suitable title for the test, e.g. 'Science Test: The Solar System'"),
 });
 
 export type GenerateAssessmentQuestionsOutput = z.infer<typeof GenerateAssessmentQuestionsOutputSchema>;
@@ -134,29 +144,24 @@ const prompt = ai.definePrompt({
   output: {
     schema: GenerateAssessmentQuestionsOutputSchema,
   },
-  prompt: `You are an expert teacher specializing in creating comprehensive and grade-appropriate assessments. Generate a test and a corresponding answer key based on the following details.
+  prompt: `You are an expert teacher specializing in creating grade-appropriate assessment questions. Generate a list of questions based on the following details.
 
-  {{#if subject}}Subject: {{{subject}}}{{/if}}
-  {{#if topic}}Topic/Chapter: {{{topic}}}{{/if}}
-  Grade: {{{grade}}}
-  Number of Questions: {{{numQuestions}}}
-  Type of Questions: {{{questionType}}}
-  {{#if timer}}Time Limit: {{{timer}}} minutes{{/if}}
-  {{#if uploadedContent}}- Base content on this image: {{media url=uploadedContent}}{{/if}}
-  {{#if libraryContent}}- Base content on this text: {{{libraryContent}}}{{/if}}
-  {{#if tags}}- Additional Context Tags: {{#each tags}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}
+  Subject: {{subject}}
+  Topic/Chapter: {{topic}}
+  Grade: {{grade}}
+  Number of Questions: {{numQuestions}}
+  Type of Questions: {{questionType}}
+  {{#if uploadedContent}}Base content on this image: {{media url=uploadedContent}}{{/if}}
+  {{#if libraryContent}}Base content on this text: {{{libraryContent}}}{{/if}}
+  {{#if tags}}Additional Context Tags: {{#each tags}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}
 
-Instructions for the Test:
-- Create a clear and well-structured test.
-- The questions should be diverse if 'Mix' is chosen, otherwise stick to the specified question type.
-- Ensure the difficulty is appropriate for the specified grade level.
-- Format the test cleanly.
-
-Instructions for the Answer Key:
-- Create a separate, clear, and accurate answer key for all the questions in the test.
-- Label it clearly as "Answer Key".
-
-Generate the test content and the answer key as two separate outputs.
+  Instructions:
+  1. Generate exactly {{numQuestions}} questions.
+  2. For each question, provide all the fields specified in the output schema.
+  3. Ensure the question text, answer, difficulty, and tags are relevant and accurate.
+  4. The difficulty should be a number from 1 (easy) to 5 (hard), appropriate for the specified grade level.
+  5. The 'no' field should be a string representing the question number (e.g., "1", "2").
+  6. Generate a suitable title for the test based on the subject and topic.
 `,
   config: {
     safetySettings,
