@@ -8,6 +8,7 @@ const QuestionSchema = z.object({
     options: z.array(z.string()).optional(),
     difficulty: z.number().min(1).max(5),
     tags: z.array(z.string()),
+    questionType: z.string(),
 });
 
 export const SaveAssessmentInputSchema = z.object({
@@ -22,5 +23,3 @@ export const SaveAssessmentInputSchema = z.object({
 });
 
 export type SaveAssessmentInput = z.infer<typeof SaveAssessmentInputSchema>;
-
-    

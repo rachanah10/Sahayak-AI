@@ -466,9 +466,12 @@ export default function AssessmentGeneratorPage() {
               <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
                 {editedAssessment.questions.map((q, index) => (
                   <div key={index} className="p-4 border rounded-lg space-y-2">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center gap-2">
                         <Label htmlFor={`q-text-${index}`} className="font-semibold">Question {index + 1}</Label>
-                        <Badge variant="secondary">Difficulty: {q.difficulty}/5</Badge>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline">{q.questionType}</Badge>
+                            <Badge variant="secondary">Difficulty: {q.difficulty}/5</Badge>
+                        </div>
                     </div>
                     <Textarea
                         id={`q-text-${index}`}
@@ -519,5 +522,3 @@ export default function AssessmentGeneratorPage() {
     </div>
   );
 }
-
-    
