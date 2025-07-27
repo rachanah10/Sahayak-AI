@@ -33,7 +33,7 @@ const GenerateAssessmentQuestionsInputSchema = z.object({
   subject: z.string().optional().describe('The subject for the assessment (e.g., Math, Science).'),
   topic: z.string().optional().describe('The topic or chapter for which assessment questions are to be generated.'),
   grade: z.string().describe('The grade level for the students.'),
-  numQuestions: z.number().default(5).describe('The number of assessment questions to generate.'),
+  numQuestions: z.number().default(5).describe('The number of assessment questions to generate for each difficulty level.'),
   questionType: z.enum(['Multiple Choice', 'Fill in the Blanks', 'Short Answer', 'Mix']).default('Mix').describe('The type of assessment questions to generate.'),
   timer: z.number().optional().describe('The time limit for the test in minutes.'),
   deadline: z.string().optional().describe('The deadline for the test.'),
@@ -53,7 +53,7 @@ const QuestionSchema = z.object({
     no: z.string().describe("Question number, e.g., '1'"),
     text: z.string().describe("The text of the question."),
     answer: z.string().describe("The correct answer to the question."),
-    difficulty: z.number().min(1).max(5).describe("Difficulty rating from 1 (easy) to 5 (hard)."),
+    difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe("Difficulty level: 'Easy', 'Medium', or 'Hard'."),
     tags: z.array(z.string()).describe("Relevant tags for the question."),
 });
 export type Question = z.infer<typeof QuestionSchema>;
@@ -144,27 +144,34 @@ const prompt = ai.definePrompt({
   output: {
     schema: GenerateAssessmentQuestionsOutputSchema,
   },
-  prompt: `You are an expert teacher specializing in creating grade-appropriate assessment questions. Generate a list of questions based on the following details.
+  prompt: `You are an expert teacher creating grade-appropriate assessment questions. Generate three sets of questions (Easy, Medium, Hard) based on the following details.
 
   Subject: {{subject}}
   Topic/Chapter: {{topic}}
   Grade: {{grade}}
-  Number of Questions: {{numQuestions}}
+  Number of Questions per difficulty level: {{numQuestions}}
+  Total Questions to Generate: {{multiply numQuestions 3}}
   Type of Questions: {{questionType}}
   {{#if uploadedContent}}Base content on this image: {{media url=uploadedContent}}{{/if}}
   {{#if libraryContent}}Base content on this text: {{{libraryContent}}}{{/if}}
   {{#if tags}}Additional Context Tags: {{#each tags}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}
 
   Instructions:
-  1. Generate exactly {{numQuestions}} questions.
-  2. For each question, provide all the fields specified in the output schema.
-  3. Ensure the question text, answer, difficulty, and tags are relevant and accurate.
-  4. The difficulty should be a number from 1 (easy) to 5 (hard), appropriate for the specified grade level.
-  5. The 'no' field should be a string representing the question number (e.g., "1", "2").
-  6. Generate a suitable title for the test based on the subject and topic.
+  1. Generate exactly {{numQuestions}} questions for 'Easy' difficulty.
+  2. Generate exactly {{numQuestions}} questions for 'Medium' difficulty.
+  3. Generate exactly {{numQuestions}} questions for 'Hard' difficulty.
+  4. For each question, provide all the fields specified in the output schema.
+  5. The 'difficulty' field must be one of 'Easy', 'Medium', or 'Hard'.
+  6. Ensure the question text, answer, and tags are relevant and accurate for the grade level.
+  7. The 'no' field should be a string representing the question number (e.g., "1", "2", ...).
+  8. Generate a suitable title for the test based on the subject and topic.
 `,
   config: {
     safetySettings,
+    model: 'googleai/gemini-2.0-flash-preview-0514'
+  },
+   helpers: {
+    multiply: (a: number, b: number) => a * b,
   }
 });
 

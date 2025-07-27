@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -38,7 +39,6 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -48,7 +48,7 @@ const schema = z.object({
   subject: z.string().optional(),
   topic: z.string().optional(),
   grade: z.string().min(1, "Please select a grade."),
-  numQuestions: z.coerce.number().min(1, "At least 1 question is required.").max(20, "Maximum 20 questions."),
+  numQuestions: z.coerce.number().min(1, "At least 1 question is required.").max(10, "Maximum 10 questions per level."),
   questionType: z.enum(['Multiple Choice', 'Fill in the Blanks', 'Short Answer', 'Mix']),
   timer: z.coerce.number().optional(),
   deadline: z.date().optional(),
@@ -91,6 +91,7 @@ export default function AssessmentGeneratorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [assessment, setAssessment] = useState<GenerateAssessmentQuestionsOutput | null>(null);
+  const [editedAssessment, setEditedAssessment] = useState<GenerateAssessmentQuestionsOutput | null>(null);
   const [isPublished, setIsPublished] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
@@ -183,6 +184,7 @@ export default function AssessmentGeneratorPage() {
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     setIsLoading(true);
     setAssessment(null);
+    setEditedAssessment(null);
     setIsPublished(false);
     try {
       const payload: any = {
@@ -203,6 +205,7 @@ export default function AssessmentGeneratorPage() {
 
       const result = await generateAssessmentQuestionsAction(payload);
       setAssessment(result);
+      setEditedAssessment(JSON.parse(JSON.stringify(result))); // Deep copy for editing
     } catch (error) {
       console.error(error);
       toast({
@@ -214,11 +217,19 @@ export default function AssessmentGeneratorPage() {
       setIsLoading(false);
     }
   };
+
+  const handleQuestionChange = (index: number, field: 'text' | 'answer', value: string) => {
+    if (!editedAssessment) return;
+    const newQuestions = [...editedAssessment.questions];
+    // @ts-ignore
+    newQuestions[index][field] = value;
+    setEditedAssessment({ ...editedAssessment, questions: newQuestions });
+  };
   
   const handlePublish = async () => {
-    if (!assessment || !user) return;
+    if (!editedAssessment || !user) return;
     
-    const topicToSave = formValues.topic || assessment.testTitle;
+    const topicToSave = formValues.topic || editedAssessment.testTitle;
     const subjectToSave = formValues.subject || "General";
     
     if (!topicToSave) {
@@ -237,7 +248,7 @@ export default function AssessmentGeneratorPage() {
             subject: subjectToSave,
             topic: topicToSave,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
-            questions: assessment.questions,
+            questions: editedAssessment.questions,
         });
         toast({
             title: "Test Saved & Published!",
@@ -254,7 +265,16 @@ export default function AssessmentGeneratorPage() {
     } finally {
         setIsSaving(false);
     }
-}
+  }
+
+  const questionsByDifficulty = useMemo(() => {
+    if (!editedAssessment) return { Easy: [], Medium: [], Hard: [] };
+    return editedAssessment.questions.reduce((acc, q, index) => {
+        // @ts-ignore
+        (acc[q.difficulty] = acc[q.difficulty] || []).push({ ...q, originalIndex: index });
+        return acc;
+    }, {} as Record<string, (Question & { originalIndex: number })[]>);
+  }, [editedAssessment]);
 
 
   return (
@@ -337,7 +357,7 @@ export default function AssessmentGeneratorPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="numQuestions">Number of Questions *</Label>
+                    <Label htmlFor="numQuestions">Questions per Level *</Label>
                     <Input id="numQuestions" type="number" {...register("numQuestions")} />
                     {errors.numQuestions && <p className="text-sm text-destructive">{errors.numQuestions.message}</p>}
                 </div>
@@ -431,54 +451,60 @@ export default function AssessmentGeneratorPage() {
                 </div>
             </Card>
         )}
-        {assessment && (
-            <>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>{assessment.testTitle}</CardTitle>
-                        <CardDescription>{formValues.grade} &bull; {formValues.numQuestions} Questions</CardDescription>
+        {editedAssessment && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>{editedAssessment.testTitle}</CardTitle>
+                <CardDescription>{formValues.grade} &bull; {editedAssessment.questions.length} Questions</CardDescription>
+              </div>
+              <Button size="sm" onClick={handlePublish} disabled={isPublished || isSaving}>
+                {isSaving ? <Spinner className="mr-2 h-4 w-4" /> : isPublished ? <CheckCircle className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+                {isPublished ? 'Published' : 'Save & Publish'}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="Easy" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="Easy">Easy</TabsTrigger>
+                  <TabsTrigger value="Medium">Medium</TabsTrigger>
+                  <TabsTrigger value="Hard">Hard</TabsTrigger>
+                </TabsList>
+                {(['Easy', 'Medium', 'Hard'] as const).map(difficulty => (
+                  <TabsContent value={difficulty} key={difficulty}>
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
+                      {questionsByDifficulty[difficulty]?.map((q, i) => (
+                        <div key={q.originalIndex} className="p-4 border rounded-lg space-y-2">
+                           <Label htmlFor={`q-text-${q.originalIndex}`} className="font-semibold">Question {i + 1}</Label>
+                           <Textarea
+                                id={`q-text-${q.originalIndex}`}
+                                value={q.text}
+                                onChange={(e) => handleQuestionChange(q.originalIndex, 'text', e.target.value)}
+                                className="text-base"
+                            />
+
+                           <Label htmlFor={`q-ans-${q.originalIndex}`} className="font-semibold text-primary">Answer</Label>
+                           <Textarea
+                                id={`q-ans-${q.originalIndex}`}
+                                value={q.answer}
+                                onChange={(e) => handleQuestionChange(q.originalIndex, 'answer', e.target.value)}
+                                className="text-base"
+                           />
+                           <div className="flex flex-wrap gap-2 pt-1">
+                                {q.tags.map(tag => (
+                                    <Badge key={tag} variant="secondary">{tag}</Badge>
+                                ))}
+                            </div>
+                        </div>
+                      ))}
                     </div>
-                    <Button size="sm" onClick={handlePublish} disabled={isPublished || isSaving}>
-                        {isSaving ? <Spinner className="mr-2 h-4 w-4" /> : isPublished ? <CheckCircle className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
-                        {isPublished ? 'Published' : 'Save & Publish'}
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                   <Accordion type="single" collapsible className="w-full">
-                        {assessment.questions.map(q => (
-                            <AccordionItem value={`item-${q.no}`} key={q.no}>
-                                <AccordionTrigger>Question {q.no}: {q.text}</AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="font-semibold text-primary">Answer:</p>
-                                            <p>{q.answer}</p>
-                                        </div>
-                                         <div>
-                                            <p className="font-semibold">Difficulty:</p>
-                                            <p>{q.difficulty}/5</p>
-                                        </div>
-                                         <div>
-                                            <p className="font-semibold">Tags:</p>
-                                            <div className="flex flex-wrap gap-2 pt-1">
-                                                {q.tags.map(tag => (
-                                                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                   </Accordion>
-                </CardContent>
-            </Card>
-            </>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
   );
 }
-
-    

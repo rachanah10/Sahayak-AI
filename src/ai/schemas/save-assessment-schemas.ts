@@ -5,14 +5,14 @@ const QuestionSchema = z.object({
     no: z.string(),
     text: z.string(),
     answer: z.string(),
-    difficulty: z.number(),
+    difficulty: z.enum(['Easy', 'Medium', 'Hard']),
     tags: z.array(z.string()),
 });
 
 export const SaveAssessmentInputSchema = z.object({
-  subject: z.string(),
-  topic: z.string(),
-  grade: z.string(), // Keep as string for display, convert to number on save
+  subject: z.string().optional(),
+  topic: z.string().optional(),
+  grade: z.string(),
   numQuestions: z.number(),
   questionType: z.string(),
   timer: z.number().optional(),
@@ -21,5 +21,3 @@ export const SaveAssessmentInputSchema = z.object({
 });
 
 export type SaveAssessmentInput = z.infer<typeof SaveAssessmentInputSchema>;
-
-    
