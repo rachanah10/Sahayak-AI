@@ -139,40 +139,42 @@ export default function ContentLibraryPage() {
               ))}
             </SelectContent>
           </Select>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Add Content
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add New Content</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="mr-2 h-5 w-5" />
-                        Upload Media
-                    </Button>
-                    <input type="file" ref={fileInputRef} className="hidden" />
+          {user?.role !== 'student' && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto">
+                      <PlusCircle className="mr-2 h-5 w-5" />
+                      Add Content
+                  </Button>
+              </DialogTrigger>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle>Add New Content</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                      <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                          <Upload className="mr-2 h-5 w-5" />
+                          Upload Media
+                      </Button>
+                      <input type="file" ref={fileInputRef} className="hidden" />
 
-                    <Button asChild variant="outline">
-                        <Link href="/content-generator">
-                            <FileText className="mr-2 h-5 w-5" />
-                            Create New Content
-                        </Link>
-                    </Button>
+                      <Button asChild variant="outline">
+                          <Link href="/content-generator">
+                              <FileText className="mr-2 h-5 w-5" />
+                              Create New Content
+                          </Link>
+                      </Button>
 
-                    <Button asChild variant="outline">
-                        <Link href="/homework">
-                            <NotebookTabs className="mr-2 h-5 w-5" />
-                            Create New Homework
-                        </Link>
-                    </Button>
-                </div>
-            </DialogContent>
-           </Dialog>
+                      <Button asChild variant="outline">
+                          <Link href="/homework">
+                              <NotebookTabs className="mr-2 h-5 w-5" />
+                              Create New Homework
+                          </Link>
+                      </Button>
+                  </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
       {isLoading ? (

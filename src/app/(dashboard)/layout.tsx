@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 const allMenuItems = [
   { href: "/", label: "Dashboard", Icon: BookOpen, exact: true, roles: ['teacher', 'student', 'admin'] },
   { href: "/content-generator", label: "Content Generator", Icon: BookOpen, roles: ['teacher', 'admin'] },
-  { href: "/content-library", label: "Content Library", Icon: Library, roles: ['teacher', 'admin'] },
+  { href: "/content-library", label: "Content Library", Icon: Library, roles: ['teacher', 'student', 'admin'] },
   { href: "/homework", label: "Homework", Icon: NotebookTabs, roles: ['teacher', 'admin'] },
   { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare, roles: ['teacher', 'admin'] },
   { href: "/studying-assistant", label: "Studying Assistant", Icon: GraduationCap, roles: ['student', 'admin'] },
