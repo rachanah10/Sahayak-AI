@@ -16,7 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import type { Message } from "@/ai/flows/answer-teaching-question";
+import type { Message as AIMessage } from "@/ai/flows/answer-teaching-question";
 import {
   Dialog,
   DialogContent,
@@ -36,10 +36,15 @@ type FormFields = z.infer<typeof schema>;
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
+// Extend the message type to include an optional media preview for the UI
+interface DisplayMessage extends AIMessage {
+    mediaPreview?: string;
+}
+
 export default function TeachingAssistantPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const { toast } = useToast();
@@ -165,25 +170,30 @@ export default function TeachingAssistantPage() {
   }
 
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
-    if (!data.question.trim()) return;
+    if (!data.question.trim() && !mediaFile) return;
 
     setIsLoading(true);
-    let userMessageContent = data.question;
-    if (mediaPreview) {
-        // Add a placeholder to the message to indicate an image was sent
-        userMessageContent = `[Image Attached] ${data.question}`;
-    }
-    const userMessage: Message = { role: "user", content: userMessageContent };
+
+    const userMessage: DisplayMessage = {
+      role: "user",
+      content: data.question,
+      mediaPreview: mediaPreview || undefined,
+    };
     
-    // Create history from previous messages
-    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    // Create history from previous messages, excluding previews
+    const history: AIMessage[] = messages.map(({role, content}) => ({ role, content }));
     
     setMessages((prev) => [...prev, userMessage]);
+    
+    // Clear the input fields after constructing the message
+    reset();
+    const currentMediaFile = mediaFile;
+    removeMedia();
 
     try {
       let mediaDataUri: string | undefined = undefined;
-      if(mediaFile) {
-        mediaDataUri = await fileToDataUri(mediaFile);
+      if(currentMediaFile) {
+        mediaDataUri = await fileToDataUri(currentMediaFile);
       }
 
       const result = await answerTeachingQuestionAction({
@@ -192,15 +202,13 @@ export default function TeachingAssistantPage() {
          mediaDataUri,
       });
 
-      const assistantMessage: Message = { role: "model", content: result.answer };
+      const assistantMessage: AIMessage = { role: "model", content: result.answer };
       setMessages((prev) => [...prev, assistantMessage]);
       
       if (result.audioDataUri) {
         playAudio(result.audioDataUri);
       }
       
-      reset();
-      removeMedia();
     } catch (error) {
       console.error(error);
       toast({
@@ -234,6 +242,15 @@ export default function TeachingAssistantPage() {
                         </Avatar>
                     )}
                     <div className={`rounded-lg p-3 max-w-xl ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        {message.mediaPreview && (
+                            <Image
+                                src={message.mediaPreview}
+                                alt="user upload"
+                                width={150}
+                                height={150}
+                                className="rounded-md mb-2 aspect-square object-cover"
+                            />
+                        )}
                         <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     </div>
                      {message.role === 'user' && (
