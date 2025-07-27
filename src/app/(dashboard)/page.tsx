@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Library,
   GraduationCap,
+  BarChart3,
 } from "lucide-react";
 import React from 'react';
 import { useAuth } from "@/hooks/use-auth";
@@ -69,10 +70,10 @@ const features = [
     Icon: CalendarDays,
   },
   {
-    title: "Progress Tracker",
-    description: "Log student skill levels and get AI-powered suggestions.",
+    title: "Student Progress",
+    description: "Visualize student performance and track assessment history.",
     href: "/progress-tracker",
-    Icon: Users,
+    Icon: BarChart3,
   },
 ];
 
