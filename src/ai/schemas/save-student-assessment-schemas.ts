@@ -1,21 +1,14 @@
 
 import { z } from 'zod';
-
-const SubmittedAnswerSchema = z.object({
-  questionId: z.string(),
-  question: z.string(),
-  answer: z.string(),
-  correctAnswer: z.string(),
-  difficulty: z.number(),
-  tags: z.array(z.string()),
-});
+import { AnsweredQuestionSchema } from './adaptive-assessment-schemas';
 
 export const SaveStudentAssessmentInputSchema = z.object({
   studentId: z.string(),
   assessmentId: z.string(),
   assessmentTopic: z.string(),
-  submittedAnswers: z.array(SubmittedAnswerSchema),
+  questionsAttempted: z.array(AnsweredQuestionSchema).describe("The list of questions the student actually answered."),
   timeTaken: z.number().describe("Time taken in seconds"),
+  adaptiveScore: z.number().describe("The final score calculated by the adaptive AI agent."),
 });
 
 export type SaveStudentAssessmentInput = z.infer<typeof SaveStudentAssessmentInputSchema>;

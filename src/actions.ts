@@ -14,19 +14,11 @@ import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/ai/
 import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
 import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 import { saveAssessment } from "@/ai/flows/save-assessment";
-import { getAuth } from "firebase-admin/auth";
-import { initAdmin } from "@/lib/firebase-admin";
+import { saveStudentAssessment } from "@/ai/flows/save-student-assessment";
+import { getNextAdaptiveQuestion } from "@/ai/flows/get-next-adaptive-question";
 import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
 import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
-
-
-async function getCurrentUserId(): Promise<string> {
-    initAdmin();
-    // In a real app, you'd get this from the session.
-    // For this prototype, we'll use a hardcoded UID to avoid permission issues with listUsers.
-    // This corresponds to the first pre-seeded user.
-    return "erYvJ848w6hSFjvPBfOA5zwqLK72";
-}
+import type { SaveStudentAssessmentInput } from "@/ai/schemas/save-student-assessment-schemas";
 
 
 export {
@@ -42,15 +34,18 @@ export {
 
 export const answerTeachingQuestionAction = answerTeachingQuestion;
 export const answerStudyingQuestionAction = answerStudyingQuestion;
+export const getNextAdaptiveQuestionAction = getNextAdaptiveQuestion;
 
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
-export async function saveToContentLibraryAction(input: SaveToContentLibraryInput) {
-    const userId = await getCurrentUserId();
+export async function saveToContentLibraryAction(input: SaveToContentLibraryInput, userId: string) {
     return saveToContentLibrary(input, userId);
 }
 
-export async function saveAssessmentAction(input: SaveAssessmentInput) {
-     const userId = await getCurrentUserId();
+export async function saveAssessmentAction(input: SaveAssessmentInput, userId: string) {
     return saveAssessment(input, userId);
+}
+
+export async function saveStudentAssessmentAction(input: SaveStudentAssessmentInput) {
+    return saveStudentAssessment(input);
 }
