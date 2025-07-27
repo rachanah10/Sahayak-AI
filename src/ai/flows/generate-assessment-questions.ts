@@ -150,7 +150,6 @@ const prompt = ai.definePrompt({
   Topic/Chapter: {{topic}}
   Grade: {{grade}}
   Number of Questions per difficulty level: {{numQuestions}}
-  Total Questions to Generate: {{multiply numQuestions 3}}
   Type of Questions: {{questionType}}
   {{#if uploadedContent}}Base content on this image: {{media url=uploadedContent}}{{/if}}
   {{#if libraryContent}}Base content on this text: {{{libraryContent}}}{{/if}}
@@ -169,9 +168,6 @@ const prompt = ai.definePrompt({
   config: {
     safetySettings,
     model: 'googleai/gemini-2.0-flash-preview-0514'
-  },
-   helpers: {
-    multiply: (a: number, b: number) => a * b,
   }
 });
 
