@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -41,6 +42,7 @@ import type { SuggestFollowUpContentInput } from "@/ai/flows/suggest-follow-up-c
 
 interface StudentPerformance {
   id: number;
+  uid: string;
   name: string;
   performance: {
     math: number;
@@ -60,6 +62,7 @@ interface StudentPerformance {
 const mockStudentData: StudentPerformance[] = [
   {
     id: 1,
+    uid: "student1_uid",
     name: "Aarav Sharma",
     performance: { math: 85, science: 92, reading: 78, writing: 81, history: 88 },
     assessments: [
@@ -69,6 +72,7 @@ const mockStudentData: StudentPerformance[] = [
   },
   {
     id: 2,
+    uid: "student2_uid",
     name: "Priya Patel",
     performance: { math: 95, science: 88, reading: 91, writing: 94, history: 85 },
     assessments: [
@@ -77,7 +81,8 @@ const mockStudentData: StudentPerformance[] = [
   },
   {
     id: 3,
-    name: "",
+    uid: "student3_uid",
+    name: "Rohan Das",
     performance: { math: 72, science: 65, reading: 80, writing: 75, history: 78 },
     assessments: [
       { id: "rd1", topic: "Grammar and Punctuation", score: 78, date: "2024-05-13" },
@@ -117,10 +122,12 @@ export default function ProgressTrackerPage() {
   const [selectedStudent, setSelectedStudent] = useState<StudentPerformance | null>(null);
 
   useEffect(() => {
-    // If a student is logged in, find their data from the mock list
+    // If a student is logged in, find their data from the mock list using UID
     if (user?.role === "student") {
-      const studentData = mockStudentData.find(s => s.name === user.name);
-      setSelectedStudent(studentData || null);
+      const studentData = mockStudentData.find(s => s.uid === user.uid);
+      // As we don't have real UIDs for mock students that match Firebase Auth,
+      // we'll fall back to the first student for demonstration purposes if no match is found.
+      setSelectedStudent(studentData || mockStudentData[0]);
     }
   }, [user]);
 
