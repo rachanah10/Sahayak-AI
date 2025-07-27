@@ -34,12 +34,10 @@ export const answerStudyingQuestionAction = answerStudyingQuestion;
 
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
-export function saveToContentLibraryAction(input: SaveToContentLibraryInput, userId: string) {
-    return saveToContentLibrary(input, userId);
+export async function saveToContentLibraryAction(input: SaveToContentLibraryInput, userId: string) {
+    return await saveToContentLibrary(input, userId);
 }
 
-export function saveAssessmentAction(input: SaveAssessmentInput) {
-    return saveAssessment(input);
+export async function saveAssessmentAction(input: SaveAssessmentInput) {
+    return await saveAssessment(input);
 }
-
-    
