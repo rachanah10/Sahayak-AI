@@ -46,6 +46,24 @@ export async function answerTeachingQuestion(input: AnswerTeachingQuestionInput)
   return answerTeachingQuestionFlow(input);
 }
 
+const safetySettings = [
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+    ];
 
 // Define the main prompt for generating the text answer
 const answerPrompt = ai.definePrompt({
@@ -74,6 +92,9 @@ Current Question: {{{question}}}
 Analyze this image to help answer the question: {{media url=mediaDataUri}}
 {{/if}}
 `,
+  config: {
+    safetySettings,
+  }
 });
 
 // Helper function to convert PCM audio buffer to WAV format
@@ -114,7 +135,7 @@ const answerTeachingQuestionFlow = ai.defineFlow(
     const answerText = answerOutput?.answer;
 
     if (!answerText) {
-      throw new Error('Failed to generate a text answer.');
+      throw new Error('Failed to generate a text answer. The prompt may have been blocked by safety settings.');
     }
 
     // 2. Generate the audio from the text answer using a TTS model.

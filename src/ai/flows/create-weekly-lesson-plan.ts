@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -56,6 +57,25 @@ export async function suggestLessonPlanTagsAction(input: SuggestLessonPlanTagsIn
     return suggestLessonPlanTagsFlow(input);
 }
 
+const safetySettings = [
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+    ];
+
 // Prompt for Tag Suggestions
 const suggestTagsPrompt = ai.definePrompt({
   name: 'suggestLessonPlanTagsPrompt',
@@ -74,6 +94,9 @@ const suggestTagsPrompt = ai.definePrompt({
   - "Key Concepts: Evaporation, Condensation, Precipitation"
   - "Deep Dive: The role of the sun in the water cycle"
   `,
+  config: {
+    safetySettings,
+  }
 });
 
 // Flow for Tag Suggestions
@@ -85,7 +108,10 @@ const suggestLessonPlanTagsFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await suggestTagsPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate tags. The prompt may have been blocked by safety settings.');
+    }
+    return output;
   }
 );
 
@@ -111,6 +137,9 @@ const createWeeklyLessonPlanPrompt = ai.definePrompt({
   5.  Format the entire output as a single Markdown string.
   6.  Ensure the plan is realistic and covers the syllabus topics effectively within the given timeframe.
 `,
+  config: {
+    safetySettings,
+  }
 });
 
 // Flow for Lesson Plan Generation
@@ -122,6 +151,9 @@ const createWeeklyLessonPlanFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await createWeeklyLessonPlanPrompt(input);
-    return { lessonPlan: output!.lessonPlan };
+    if (!output?.lessonPlan) {
+      throw new Error('Failed to generate lesson plan. The prompt may have been blocked by safety settings.');
+    }
+    return { lessonPlan: output.lessonPlan };
   }
 );

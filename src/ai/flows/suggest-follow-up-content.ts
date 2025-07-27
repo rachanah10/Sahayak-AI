@@ -1,3 +1,4 @@
+
 // Implemented the suggestFollowUpContent flow to provide personalized learning suggestions and draft reports.
 
 'use server';
@@ -31,6 +32,25 @@ export async function suggestFollowUpContent(input: SuggestFollowUpContentInput)
   return suggestFollowUpContentFlow(input);
 }
 
+const safetySettings = [
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+    ];
+
 const prompt = ai.definePrompt({
   name: 'suggestFollowUpContentPrompt',
   input: {schema: SuggestFollowUpContentInputSchema},
@@ -47,6 +67,9 @@ const prompt = ai.definePrompt({
 
   Suggested Content:
   Draft Report: `,
+  config: {
+    safetySettings,
+  }
 });
 
 const suggestFollowUpContentFlow = ai.defineFlow(
@@ -57,6 +80,9 @@ const suggestFollowUpContentFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate suggestions. The prompt may have been blocked by safety settings.');
+    }
+    return output;
   }
 );

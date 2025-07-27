@@ -6,10 +6,10 @@
  *
  * - generateLocalizedContent - A function that generates localized content.
  * - GenerateLocalizedContentInput - The input type for the generateLocalizedContent function.
- * - GenerateLocalizedContentOutput - The return type for the generateLocalizedContent function.
+ * - GenerateLocalizedContentOutput - The return type for the generateLocalizedContentOutput function.
  * - suggestTagsForContent - A function that suggests tags based on a prompt.
  * - SuggestTagsForContentInput - The input type for the suggestTagsForContent function.
- * - SuggestTagsForContentOutput - The return type for the suggestTagsForContent function.
+ * - SuggestTagsForContentOutput - The return type for the suggestTagsForContentOutput function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -50,6 +50,24 @@ const GenerateLocalizedContentOutputSchema = z.object({
 
 export type GenerateLocalizedContentOutput = z.infer<typeof GenerateLocalizedContentOutputSchema>;
 
+const safetySettings = [
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+    ];
 
 // Flow for suggesting tags
 const suggestTagsPrompt = ai.definePrompt({
@@ -74,6 +92,9 @@ const suggestTagsPrompt = ai.definePrompt({
 
   Based on this, generate a list of 5-10 relevant tags.
   `,
+  config: {
+    safetySettings,
+  }
 });
 
 const suggestTagsFlow = ai.defineFlow(
@@ -84,7 +105,10 @@ const suggestTagsFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await suggestTagsPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate tags. The prompt may have been blocked by safety settings.');
+    }
+    return output;
   }
 );
 
@@ -108,6 +132,9 @@ const generateContentFinalPrompt = ai.definePrompt({
 
   Generate the story now. If the target language is not English, please provide the story in {{{language}}}.
   `,
+  config: {
+    safetySettings,
+  }
 });
 
 const imagePromptGenerator = ai.definePrompt({
@@ -133,6 +160,9 @@ const imagePromptGenerator = ai.definePrompt({
   For example, if the story is about "a clever fox outsmarting a tiger in a forest", a good prompt would be:
   "A simple, hand-drawn style, blackboard-friendly diagram showing a small, clever red fox looking proud, and a large, frustrated tiger looking away. The scene is a simple forest with a few trees and bushes. The style should be clear and easy for young children to understand."
   `,
+  config: {
+    safetySettings,
+  }
 });
 
 
@@ -160,7 +190,10 @@ const generateLocalizedContentFlow = ai.defineFlow(
           imagePromise = ai.generate({
             model: 'googleai/gemini-2.0-flash-preview-image-generation',
             prompt: imageGenPrompt,
-            config: { responseModalities: ['TEXT', 'IMAGE'] },
+            config: { 
+                responseModalities: ['TEXT', 'IMAGE'],
+                safetySettings,
+            },
           }).then(response => response.media?.url);
       }
     }
@@ -169,7 +202,7 @@ const generateLocalizedContentFlow = ai.defineFlow(
     
     if (!localizedStory && !diagramDataUri) {
         // Return a default message if both failed or were not requested.
-        return { localizedStory: "Could not generate content or image. Please try again with a different prompt." };
+        throw new Error("Could not generate content or image. The prompt may have been blocked by safety settings.");
     }
 
     return {

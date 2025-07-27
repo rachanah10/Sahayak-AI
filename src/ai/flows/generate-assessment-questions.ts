@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -34,6 +35,25 @@ export async function generateAssessmentQuestions(input: GenerateAssessmentQuest
   return generateAssessmentQuestionsFlow(input);
 }
 
+const safetySettings = [
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+    ];
+
 const prompt = ai.definePrompt({
   name: 'generateAssessmentQuestionsPrompt',
   input: {
@@ -65,6 +85,9 @@ Instructions for the Answer Key:
 
 Generate the test content and the answer key as two separate outputs.
 `,
+  config: {
+    safetySettings,
+  }
 });
 
 const generateAssessmentQuestionsFlow = ai.defineFlow(
@@ -75,6 +98,9 @@ const generateAssessmentQuestionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate assessment. The prompt may have been blocked by safety settings.');
+    }
+    return output;
   }
 );
