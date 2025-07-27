@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { format, parse, startOfMonth } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,19 +14,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { createWeeklyLessonPlanAction } from "@/app/actions";
+import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Lightbulb } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { CreateWeeklyLessonPlanInput } from "@/ai/flows/create-weekly-lesson-plan";
+import { DateRange } from "react-day-picker";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { CalendarView, type CalendarEvent } from "@/components/calendar-view";
+
+const grades = Array.from({ length: 10 }, (_, i) => `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade`);
 
 const schema = z.object({
-  gradeLevel: z.string().min(1, "Please enter a grade level."),
-  availableTime: z.string().min(1, "Please enter available time."),
+  grades: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "You have to select at least one grade.",
+  }),
+  dateRange: z.object({
+    from: z.date().optional(),
+    to: z.date().optional(),
+  }).refine(data => !!data.from && !!data.to, {
+    message: "Please select a start and end date.",
+  }),
   syllabus: z.string().min(10, "Syllabus must be at least 10 characters."),
 });
 
@@ -33,23 +48,45 @@ type FormFields = z.infer<typeof schema>;
 
 export default function LessonPlannerPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [lessonPlan, setLessonPlan] = useState("");
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+
   const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
+    control,
+    watch,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<FormFields>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      grades: [],
+      dateRange: { from: undefined, to: undefined }
+    }
   });
+
+  const formValues = watch();
 
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     setIsLoading(true);
     setLessonPlan("");
     try {
-      const result = await createWeeklyLessonPlanAction(data);
-      setLessonPlan(result.weeklyLessonPlan);
+      const payload: CreateWeeklyLessonPlanInput = {
+        ...data,
+        // @ts-ignore - Zod refinement ensures `from` and `to` exist
+        dateRange: { from: format(data.dateRange.from, 'yyyy-MM-dd'), to: format(data.dateRange.to, 'yyyy-MM-dd') },
+        tags: Array.from(selectedTags),
+      };
+      const result = await createWeeklyLessonPlanAction(payload);
+      setLessonPlan(result.lessonPlan);
     } catch (error) {
       console.error(error);
       toast({
@@ -62,9 +99,80 @@ export default function LessonPlannerPage() {
     }
   };
 
+  const handleSuggestTags = async () => {
+    setIsSuggesting(true);
+    setSuggestedTags([]);
+    try {
+      const { syllabus, grades, dateRange } = getValues();
+       if (!syllabus || grades.length === 0 || !dateRange.from || !dateRange.to) {
+         toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "Please fill out all fields to get suggestions.",
+         });
+        return;
+      }
+      const result = await suggestLessonPlanTagsAction({
+        syllabus,
+        grades,
+        dateRange: { from: format(dateRange.from, 'yyyy-MM-dd'), to: format(dateRange.to, 'yyyy-MM-dd') }
+      });
+      setSuggestedTags(result.suggestedTags);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to suggest tags. Please try again.",
+      });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(tag)) newSet.delete(tag);
+        else newSet.add(tag);
+        return newSet;
+    });
+  };
+  
+  const parseAndAddEvents = () => {
+    if (!lessonPlan) return;
+    const lines = lessonPlan.split('\n');
+    const newEvents: CalendarEvent[] = [];
+    let currentDate: Date | null = null;
+    let currentContent: string[] = [];
+
+    lines.forEach(line => {
+        const match = line.match(/^(\d{4}-\d{2}-\d{2}):\s*(.*)/);
+        if (match) {
+            if (currentDate && currentContent.length > 0) {
+                newEvents.push({ date: currentDate, title: currentContent[0], description: currentContent.slice(1).join('\n') });
+            }
+            currentDate = parse(match[1], 'yyyy-MM-dd', new Date());
+            currentContent = [match[2]];
+        } else if (currentDate) {
+            currentContent.push(line);
+        }
+    });
+    
+    if (currentDate && currentContent.length > 0) {
+        newEvents.push({ date: currentDate, title: currentContent[0], description: currentContent.slice(1).join('\n') });
+    }
+
+    setCalendarEvents(prev => [...prev, ...newEvents]);
+    toast({
+        title: "Plan Added to Calendar",
+        description: "Your lesson plan has been added to the calendar view."
+    });
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-      <div className="flex flex-col gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="lg:col-span-1 flex flex-col gap-8">
         <PageHeader
           title="Lesson Planner"
           description="Generate a weekly lesson plan based on grade, time, and syllabus."
@@ -76,16 +184,44 @@ export default function LessonPlannerPage() {
               <CardTitle>Lesson Plan Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Grades */}
               <div className="space-y-2">
-                <Label htmlFor="gradeLevel">Grade Level</Label>
-                <Input id="gradeLevel" placeholder="e.g., Class 4" {...register("gradeLevel")} />
-                {errors.gradeLevel && <p className="text-sm text-destructive">{errors.gradeLevel.message}</p>}
+                <Label>Grades</Label>
+                <div className="grid grid-cols-3 gap-2 p-2 border rounded-md">
+                  {grades.map((item) => (
+                    <div key={item} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={item}
+                        checked={formValues.grades.includes(item)}
+                        onCheckedChange={(checked) => {
+                          const currentGrades = formValues.grades;
+                          const newGrades = checked
+                            ? [...currentGrades, item]
+                            : currentGrades.filter((value) => value !== item);
+                          setValue("grades", newGrades);
+                        }}
+                      />
+                      <Label htmlFor={item} className="text-sm font-normal">{item}</Label>
+                    </div>
+                  ))}
+                </div>
+                {errors.grades && <p className="text-sm text-destructive">{errors.grades.message}</p>}
               </div>
+
+              {/* Date Range */}
               <div className="space-y-2">
-                <Label htmlFor="availableTime">Available Time (per week)</Label>
-                <Input id="availableTime" placeholder="e.g., 5 hours" {...register("availableTime")} />
-                {errors.availableTime && <p className="text-sm text-destructive">{errors.availableTime.message}</p>}
+                <Label>Date Range</Label>
+                <Calendar
+                  mode="range"
+                  selected={formValues.dateRange as DateRange}
+                  onSelect={(range) => setValue("dateRange", range || { from: undefined, to: undefined })}
+                  disabled={{ dayOfWeek: [0, 6] }}
+                  className="rounded-md border p-0"
+                />
+                 {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.message}</p>}
               </div>
+
+              {/* Syllabus */}
               <div className="space-y-2">
                 <Label htmlFor="syllabus">Syllabus / Topics to Cover</Label>
                 <Textarea
@@ -96,6 +232,32 @@ export default function LessonPlannerPage() {
                 />
                 {errors.syllabus && <p className="text-sm text-destructive">{errors.syllabus.message}</p>}
               </div>
+
+               {/* Smart Assistant */}
+                <Card className="bg-muted/50">
+                    <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg"><Lightbulb className="text-yellow-400" /> Smart Content Assistant</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    <Button type="button" variant="outline" onClick={handleSuggestTags} disabled={isSuggesting}>
+                        {isSuggesting ? <Spinner className="mr-2"/> : <Lightbulb className="mr-2" />}
+                        Suggest Tags
+                    </Button>
+                    {suggestedTags.length > 0 && (
+                        <div className="mt-4">
+                            <Label className="font-bold">Suggested Tags</Label>
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                {suggestedTags.map(tag => (
+                                    <Badge key={tag} variant={selectedTags.has(tag) ? "default" : "secondary"} onClick={() => toggleTag(tag)} className="cursor-pointer">
+                                        {tag}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    </CardContent>
+                </Card>
+
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoading}>
@@ -107,20 +269,54 @@ export default function LessonPlannerPage() {
         </Card>
       </div>
 
-      <div className="lg:sticky top-24">
-        <Card className="min-h-[400px]">
-          <CardHeader>
-            <CardTitle>Generated Weekly Lesson Plan</CardTitle>
-          </CardHeader>
-          <CardContent className="prose prose-sm dark:prose-invert whitespace-pre-wrap">
-            {isLoading && (
-              <div className="flex justify-center items-center h-40">
-                <Spinner className="w-8 h-8" />
-              </div>
-            )}
-            {lessonPlan}
-          </CardContent>
-        </Card>
+      <div className="lg:col-span-2 lg:sticky top-24">
+        <Tabs defaultValue="plan">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="plan">Generated Plan</TabsTrigger>
+                <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+            </TabsList>
+            <TabsContent value="plan">
+                <Card className="min-h-[600px]">
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <CardTitle>Generated Lesson Plan</CardTitle>
+                             {lessonPlan && (
+                                <Button onClick={parseAndAddEvents}>Add to Calendar</Button>
+                             )}
+                        </div>
+                        <CardDescription>Review and edit the generated plan below.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoading && (
+                        <div className="flex justify-center items-center h-40">
+                            <Spinner className="w-8 h-8" />
+                        </div>
+                        )}
+                        <Textarea
+                            value={lessonPlan}
+                            onChange={(e) => setLessonPlan(e.target.value)}
+                            placeholder="Your generated lesson plan will appear here..."
+                            className="min-h-96"
+                        />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="calendar">
+                <Card className="min-h-[600px]">
+                    <CardHeader>
+                         <CardTitle>Lesson Calendar</CardTitle>
+                         <CardDescription>Your saved lesson plans are shown here.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <CalendarView
+                            events={calendarEvents}
+                            month={currentMonth}
+                            setMonth={setCurrentMonth}
+                        />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

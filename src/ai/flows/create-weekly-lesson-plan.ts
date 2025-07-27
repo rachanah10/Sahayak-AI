@@ -4,48 +4,115 @@
  * @fileOverview A weekly lesson plan creation AI agent.
  *
  * - createWeeklyLessonPlan - A function that handles the weekly lesson plan creation process.
- * - CreateWeeklyLessonPlanInput - The input type for the createWeeklyLessonPlan function.
- * - CreateWeeklyLessonPlanOutput - The return type for the createWeeklyLessonPlan function.
+ * - suggestLessonPlanTags - A function that suggests relevant tags for the lesson plan.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+// Input Schema for Tag Suggestion
+const SuggestLessonPlanTagsInputSchema = z.object({
+  syllabus: z.string(),
+  grades: z.array(z.string()),
+  dateRange: z.object({
+      from: z.string(),
+      to: z.string(),
+  }),
+});
+export type SuggestLessonPlanTagsInput = z.infer<typeof SuggestLessonPlanTagsInputSchema>;
+
+// Output Schema for Tag Suggestion
+const SuggestLessonPlanTagsOutputSchema = z.object({
+  suggestedTags: z.array(z.string()).describe('A list of suggested tags to improve the lesson plan generation.'),
+});
+export type SuggestLessonPlanTagsOutput = z.infer<typeof SuggestLessonPlanTagsOutputSchema>;
+
+
+// Main Input Schema for Lesson Plan Generation
 const CreateWeeklyLessonPlanInputSchema = z.object({
-  gradeLevel: z.string().describe('The grade level for the lesson plan.'),
-  availableTime: z.string().describe('The available time for the week in hours.'),
+  grades: z.array(z.string()).describe('The grade levels for the lesson plan.'),
+  dateRange: z.object({
+      from: z.string().describe("The start date for the plan."),
+      to: z.string().describe("The end date for the plan."),
+  }).describe("The date range for the lesson plan."),
   syllabus: z.string().describe('The syllabus or topics to be covered during the week.'),
+  tags: z.array(z.string()).optional().describe("Optional tags to provide more context."),
 });
 export type CreateWeeklyLessonPlanInput = z.infer<typeof CreateWeeklyLessonPlanInputSchema>;
 
+// Main Output Schema for Lesson Plan Generation
 const CreateWeeklyLessonPlanOutputSchema = z.object({
-  weeklyLessonPlan: z.string().describe('A detailed weekly lesson plan.'),
+  lessonPlan: z.string().describe('A detailed weekly lesson plan, structured day-by-day in Markdown format.'),
 });
 export type CreateWeeklyLessonPlanOutput = z.infer<typeof CreateWeeklyLessonPlanOutputSchema>;
 
-export async function createWeeklyLessonPlan(input: CreateWeeklyLessonPlanInput): Promise<CreateWeeklyLessonPlanOutput> {
+
+// Exported actions for the frontend
+export async function createWeeklyLessonPlanAction(input: CreateWeeklyLessonPlanInput): Promise<CreateWeeklyLessonPlanOutput> {
   return createWeeklyLessonPlanFlow(input);
 }
 
-const prompt = ai.definePrompt({
+export async function suggestLessonPlanTagsAction(input: SuggestLessonPlanTagsInput): Promise<SuggestLessonPlanTagsOutput> {
+    return suggestLessonPlanTagsFlow(input);
+}
+
+// Prompt for Tag Suggestions
+const suggestTagsPrompt = ai.definePrompt({
+  name: 'suggestLessonPlanTagsPrompt',
+  input: { schema: SuggestLessonPlanTagsInputSchema },
+  output: { schema: SuggestLessonPlanTagsOutputSchema },
+  prompt: `You are a Smart Content Assistant for teachers creating a lesson plan. Based on the user's input, generate a list of 5-10 useful tags.
+  Tag categories should include: "Lesson Objective", "Key Concepts", and "Potential Topics to Deep Dive On".
+
+  User's Input:
+  - Grades: {{#each grades}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+  - Date Range: {{{dateRange.from}}} to {{{dateRange.to}}}
+  - Syllabus: {{{syllabus}}}
+  
+  Generate a list of relevant tags. For example:
+  - "Lesson Objective: Understand the water cycle"
+  - "Key Concepts: Evaporation, Condensation, Precipitation"
+  - "Deep Dive: The role of the sun in the water cycle"
+  `,
+});
+
+// Flow for Tag Suggestions
+const suggestLessonPlanTagsFlow = ai.defineFlow(
+  {
+    name: 'suggestLessonPlanTagsFlow',
+    inputSchema: SuggestLessonPlanTagsInputSchema,
+    outputSchema: SuggestLessonPlanTagsOutputSchema,
+  },
+  async (input) => {
+    const { output } = await suggestTagsPrompt(input);
+    return output!;
+  }
+);
+
+
+// Prompt for Lesson Plan Generation
+const createWeeklyLessonPlanPrompt = ai.definePrompt({
   name: 'createWeeklyLessonPlanPrompt',
   input: {schema: CreateWeeklyLessonPlanInputSchema},
   output: {schema: CreateWeeklyLessonPlanOutputSchema},
-  prompt: `You are an expert teacher specializing in creating weekly lesson plans.
+  prompt: `You are an expert teacher specializing in creating detailed and actionable lesson plans.
 
-You will use the following information to generate a detailed and comprehensive weekly lesson plan.
+  Generate a lesson plan based on the following details. The plan should cover the period from {{{dateRange.from}}} to {{{dateRange.to}}}.
 
-Grade Level: {{{gradeLevel}}}
-Available Time: {{{availableTime}}} hours
-Syllabus: {{{syllabus}}}
+  - Grade Levels: {{#each grades}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+  - Syllabus/Topics: {{{syllabus}}}
+  {{#if tags}}- Additional Context Tags: {{#each tags}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}
 
-Consider the grade level, available time, and syllabus to create a realistic and effective weekly lesson plan.
-Ensure the plan includes specific topics, activities, and assessments.
-
-Output the weekly lesson plan in a well-structured format.
-`, // Ensure Handlebars syntax is correctly used
+  Instructions:
+  1.  Create a day-by-day breakdown for the specified date range.
+  2.  For each day, provide a clear topic, a list of activities, and a small assessment or check for understanding.
+  3.  The content should be appropriate for the specified grade levels.
+  4.  Format the entire output as a single Markdown string. Use "YYYY-MM-DD: Topic" as the heading for each day. For example: "2024-08-05: Introduction to Photosynthesis".
+  5.  Ensure the plan is realistic and covers the syllabus topics effectively within the given timeframe.
+`,
 });
 
+// Flow for Lesson Plan Generation
 const createWeeklyLessonPlanFlow = ai.defineFlow(
   {
     name: 'createWeeklyLessonPlanFlow',
@@ -53,7 +120,7 @@ const createWeeklyLessonPlanFlow = ai.defineFlow(
     outputSchema: CreateWeeklyLessonPlanOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    const {output} = await createWeeklyLessonPlanPrompt(input);
+    return { lessonPlan: output!.lessonPlan };
   }
 );
