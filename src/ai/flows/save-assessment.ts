@@ -10,21 +10,10 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { initAdmin } from "@/lib/firebase-admin";
 import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
-import { getAuth } from "firebase-admin/auth";
-
-async function getCurrentUserId(): Promise<string> {
-    initAdmin();
-    // In a real app, you'd get this from the session.
-    // For this prototype, we'll use a hardcoded UID to avoid permission issues with listUsers.
-    // This corresponds to the first pre-seeded user.
-    return "erYvJ848w6hSFjvPBfOA5zwqLK72";
-}
-
 
 // This function will be called from a Server Action.
-export async function saveAssessment(input: SaveAssessmentInput): Promise<{ id: string }> {
+export async function saveAssessment(input: SaveAssessmentInput, userId: string): Promise<{ id: string }> {
   
-  const userId = await getCurrentUserId();
   if (!userId) {
     throw new Error("User must be authenticated to save an assessment.");
   }
@@ -39,12 +28,11 @@ export async function saveAssessment(input: SaveAssessmentInput): Promise<{ id: 
     createdAt: new Date(),
     questions: input.questions.map(q => ({
       ...q,
-      grade: parseInt(input.grade, 10),
-      topic: input.topic,
+      // grade and topic are now top-level fields on the assessment
     })),
   };
   
-  // Remove fields that are not part of the top-level document
+  // Remove fields that are not part of the top-level document schema
   // @ts-ignore
   delete assessmentDoc.numQuestions;
   // @ts-ignore
@@ -54,5 +42,3 @@ export async function saveAssessment(input: SaveAssessmentInput): Promise<{ id: 
 
   return { id: docRef.id };
 }
-
-    
