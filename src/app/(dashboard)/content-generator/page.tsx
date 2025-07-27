@@ -177,15 +177,16 @@ export default function ContentGeneratorPage() {
   };
 
   const handleSaveToLibrary = async () => {
-    if (!output) return;
+    if (!output || !editedStory) return;
     setIsSaving(true);
     try {
       const { prompt, grade, language } = getValues();
       const payload: SaveToContentLibraryInput = {
         prompt,
+        type: 'Story',
+        content: editedStory,
         grade,
         language,
-        story: editedStory,
         imageUrl: output.diagramDataUri,
       }
       await saveToContentLibraryAction(payload);

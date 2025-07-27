@@ -9,7 +9,7 @@ import {
 import { generateHomeworkAction, suggestHomeworkTagsAction } from "@/ai/flows/generate-homework";
 import { answerTeachingQuestion } from "@/ai/flows/answer-teaching-question";
 import { answerStudyingQuestion } from "@/ai/flows/answer-studying-question";
-import { generateAssessmentQuestions } from "@/ai/flows/generate-assessment-questions";
+import { generateAssessmentQuestionsAction, suggestAssessmentTagsAction } from "@/ai/flows/generate-assessment-questions";
 import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/ai/flows/create-weekly-lesson-plan";
 import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
 import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
@@ -23,12 +23,9 @@ import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
 async function getCurrentUserId(): Promise<string> {
     initAdmin();
     // In a real app, you'd get this from the session.
-    // For this prototype, we'll get the first user as a stand-in.
-    const user = await getAuth().listUsers(1);
-    if(user.users.length > 0) {
-        return user.users[0].uid;
-    }
-    throw new Error("No users found.");
+    // For this prototype, we'll use a hardcoded UID to avoid permission issues with listUsers.
+    // This corresponds to the first pre-seeded user.
+    return "erYvJ848w6hSFjvPBfOA5zwqLK72";
 }
 
 
@@ -39,11 +36,13 @@ export {
   suggestHomeworkTagsAction,
   createWeeklyLessonPlanAction,
   suggestLessonPlanTagsAction,
+  generateAssessmentQuestionsAction,
+  suggestAssessmentTagsAction
 };
 
 export const answerTeachingQuestionAction = answerTeachingQuestion;
 export const answerStudyingQuestionAction = answerStudyingQuestion;
-export const generateAssessmentQuestionsAction = generateAssessmentQuestions;
+
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
 export async function saveToContentLibraryAction(input: SaveToContentLibraryInput) {
