@@ -14,6 +14,8 @@ import { createWeeklyLessonPlanAction, suggestLessonPlanTagsAction } from "@/ai/
 import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
 import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 import { saveAssessment } from "@/ai/flows/save-assessment";
+import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
+import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
 
 
 export {
@@ -32,6 +34,12 @@ export const answerStudyingQuestionAction = answerStudyingQuestion;
 
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
-export const saveToContentLibraryAction = saveToContentLibrary;
-export const saveAssessmentAction = saveAssessment;
+export function saveToContentLibraryAction(input: SaveToContentLibraryInput, userId: string) {
+    return saveToContentLibrary(input, userId);
+}
 
+export function saveAssessmentAction(input: SaveAssessmentInput) {
+    return saveAssessment(input);
+}
+
+    

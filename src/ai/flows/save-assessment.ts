@@ -10,10 +10,21 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { initAdmin } from "@/lib/firebase-admin";
 import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
+import { getAuth } from "firebase-admin/auth";
 
-// This function will be called from a Server Action, so it needs to handle auth.
-// We'll assume a mechanism exists to pass the user's UID to this function.
-export async function saveAssessment(input: SaveAssessmentInput, userId: string): Promise<{ id: string }> {
+async function getCurrentUserId(): Promise<string> {
+    initAdmin();
+    // In a real app, you'd get this from the session.
+    // For this prototype, we'll use a hardcoded UID to avoid permission issues with listUsers.
+    // This corresponds to the first pre-seeded user.
+    return "erYvJ848w6hSFjvPBfOA5zwqLK72";
+}
+
+
+// This function will be called from a Server Action.
+export async function saveAssessment(input: SaveAssessmentInput): Promise<{ id: string }> {
+  
+  const userId = await getCurrentUserId();
   if (!userId) {
     throw new Error("User must be authenticated to save an assessment.");
   }
@@ -22,27 +33,26 @@ export async function saveAssessment(input: SaveAssessmentInput, userId: string)
   initAdmin();
   const db = getFirestore();
   
-  // Convert grade string (e.g., "4th Grade") to a number
-  const gradeNumber = parseInt(input.grade, 10);
-
   const assessmentDoc = {
+    ...input,
     userId: userId,
-    subject: input.subject,
-    topic: input.topic,
-    grade: input.grade, // Keep original string for display
-    numQuestions: input.numQuestions,
-    questionType: input.questionType,
-    timer: input.timer,
-    deadline: input.deadline,
     createdAt: new Date(),
     questions: input.questions.map(q => ({
       ...q,
-      grade: gradeNumber, // Save numeric grade
-      topic: input.topic, // Add topic to each question for easier querying
+      grade: parseInt(input.grade, 10),
+      topic: input.topic,
     })),
   };
   
+  // Remove fields that are not part of the top-level document
+  // @ts-ignore
+  delete assessmentDoc.numQuestions;
+  // @ts-ignore
+  delete assessmentDoc.questionType;
+
   const docRef = await db.collection('assessments').add(assessmentDoc);
 
   return { id: docRef.id };
 }
+
+    

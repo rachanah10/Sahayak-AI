@@ -216,20 +216,33 @@ export default function AssessmentGeneratorPage() {
   };
   
   const handlePublish = async () => {
-    if(!assessment || !formValues.topic || !formValues.subject || !user) return;
+    if (!assessment || !user) return;
+    
+    const topicToSave = formValues.topic || assessment.testTitle;
+    const subjectToSave = formValues.subject || "General";
+    
+    if (!topicToSave) {
+        toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "A topic is required to save the assessment. Please enter one.",
+        });
+        return;
+    }
+
     setIsSaving(true);
     try {
         await saveAssessmentAction({
             ...formValues,
-            subject: formValues.subject,
-            topic: formValues.topic,
+            subject: subjectToSave,
+            topic: topicToSave,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
             questions: assessment.questions,
-        }, user.uid)
+        });
         toast({
             title: "Test Saved & Published!",
             description: "The assessment has been saved and is available for students."
-        })
+        });
         setIsPublished(true);
     } catch (error) {
          console.error(error);
@@ -241,7 +254,8 @@ export default function AssessmentGeneratorPage() {
     } finally {
         setIsSaving(false);
     }
-  }
+}
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -466,3 +480,5 @@ export default function AssessmentGeneratorPage() {
     </div>
   );
 }
+
+    
