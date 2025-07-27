@@ -43,7 +43,7 @@ const schema = z.object({
   }).refine(data => !!data.from && !!data.to, {
     message: "Please select a start and end date.",
   }),
-  syllabus: z.string().min(10, "Syllabus must be at least 10 characters."),
+  syllabus: z.string(),
 });
 
 type FormFields = z.infer<typeof schema>;
@@ -324,5 +324,3 @@ export default function LessonPlannerPage() {
     </div>
   );
 }
-
-    
