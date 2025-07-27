@@ -8,7 +8,7 @@
  */
 
 import { getFirestore } from "firebase-admin/firestore";
-import { initFirebaseAdmin } from "@/lib/firebase-admin";
+import { initAdmin } from "@/lib/firebase-admin";
 import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
 
 
@@ -18,7 +18,7 @@ export async function saveToContentLibrary(input: SaveToContentLibraryInput, use
   }
   
   // Ensure Firebase Admin is initialized
-  initFirebaseAdmin();
+  initAdmin();
   const db = getFirestore();
   const docRef = await db.collection('content-library').add({
     ...input,

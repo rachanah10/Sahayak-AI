@@ -18,6 +18,7 @@ import {
   PanelLeft,
   Search,
   Library,
+  GraduationCap,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const menuItems = [
   { href: "/content-library", label: "Content Library", Icon: Library },
   { href: "/homework", label: "Homework", Icon: NotebookTabs },
   { href: "/teaching-assistant", label: "Teaching Assistant", Icon: MessageSquare },
+  { href: "/studying-assistant", label: "Studying Assistant", Icon: GraduationCap },
   { href: "/assessment-generator", label: "Assessment Generator", Icon: ClipboardCheck },
   { href: "/view-assessments", label: "View Assessments", Icon: Users },
   { href: "/lesson-planner", label: "Lesson Planner", Icon: CalendarDays },

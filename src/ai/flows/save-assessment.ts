@@ -8,7 +8,7 @@
  */
 
 import { getFirestore } from "firebase-admin/firestore";
-import { initFirebaseAdmin } from "@/lib/firebase-admin";
+import { initAdmin } from "@/lib/firebase-admin";
 import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
 
 // This function will be called from a Server Action, so it needs to handle auth.
@@ -19,7 +19,7 @@ export async function saveAssessment(input: SaveAssessmentInput, userId: string)
   }
   
   // Ensure Firebase Admin is initialized
-  initFirebaseAdmin();
+  initAdmin();
   const db = getFirestore();
   const docRef = await db.collection('assessments').add({
     ...input,

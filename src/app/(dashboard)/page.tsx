@@ -20,6 +20,7 @@ import {
   Users,
   ArrowRight,
   Library,
+  GraduationCap,
 } from "lucide-react";
 import React from 'react';
 import { useAuth } from "@/hooks/use-auth";
@@ -48,6 +49,12 @@ const features = [
     description: "Ask teaching questions and get instant answers.",
     href: "/teaching-assistant",
     Icon: MessageSquare,
+  },
+   {
+    title: "Studying Assistant",
+    description: "A study buddy for students to ask questions and get help.",
+    href: "/studying-assistant",
+    Icon: GraduationCap,
   },
   {
     title: "Assessment Generator",

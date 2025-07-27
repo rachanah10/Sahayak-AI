@@ -8,16 +8,17 @@ import {
 
 import { generateHomework } from "@/ai/flows/generate-homework";
 import { answerTeachingQuestion } from "@/ai/flows/answer-teaching-question";
+import { answerStudyingQuestion } from "@/ai/flows/answer-studying-question";
 import { generateAssessmentQuestions } from "@/ai/flows/generate-assessment-questions";
 import { createWeeklyLessonPlan } from "@/ai/flows/create-weekly-lesson-plan";
 import { suggestFollowUpContent } from "@/ai/flows/suggest-follow-up-content";
 import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 import { saveAssessment } from "@/ai/flows/save-assessment";
 import { getAuth } from "firebase-admin/auth";
-import { initFirebaseAdmin } from "@/lib/firebase-admin";
+import { initAdmin } from "@/lib/firebase-admin";
 
 async function getCurrentUserId(): Promise<string> {
-    initFirebaseAdmin();
+    initAdmin();
     // In a real app, you'd get this from the session.
     // For this prototype, we'll get the first user as a stand-in.
     const user = await getAuth().listUsers(1);
@@ -35,6 +36,7 @@ export {
 
 export const generateHomeworkAction = generateHomework;
 export const answerTeachingQuestionAction = answerTeachingQuestion;
+export const answerStudyingQuestionAction = answerStudyingQuestion;
 export const generateAssessmentQuestionsAction = generateAssessmentQuestions;
 export const createWeeklyLessonPlanAction = createWeeklyLessonPlan;
 export const suggestFollowUpContentAction = suggestFollowUpContent;
