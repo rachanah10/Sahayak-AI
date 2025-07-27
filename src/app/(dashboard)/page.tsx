@@ -10,75 +10,97 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import {
-  LayoutDashboard,
   BookOpen,
   NotebookTabs,
   MessageSquare,
   ClipboardCheck,
   CalendarDays,
-  Image as ImageIcon,
-  Users,
   ArrowRight,
   Library,
   GraduationCap,
   BarChart3,
+  type LucideIcon
 } from "lucide-react";
 import React from 'react';
 import { useAuth } from "@/hooks/use-auth";
 
-const features = [
+interface Feature {
+    title: string;
+    description: string;
+    href: string;
+    Icon: LucideIcon;
+    roles: ('teacher' | 'student' | 'admin')[];
+}
+
+const allFeatures: Feature[] = [
   {
     title: "Content Generator",
     description: "Create localized, culturally relevant stories and worksheets.",
     href: "/content-generator",
     Icon: BookOpen,
+    roles: ['teacher', 'admin'],
   },
    {
     title: "Content Library",
     description: "View and manage all your generated and saved content.",
     href: "/content-library",
     Icon: Library,
+    roles: ['teacher', 'student', 'admin'],
   },
   {
     title: "Homework",
     description: "Generate multi-level worksheets from a textbook image.",
     href: "/homework",
     Icon: NotebookTabs,
+    roles: ['teacher', 'admin'],
   },
   {
     title: "Teaching Assistant",
     description: "Ask teaching questions and get instant answers.",
     href: "/teaching-assistant",
     Icon: MessageSquare,
+    roles: ['teacher', 'admin'],
   },
    {
     title: "Studying Assistant",
     description: "A study buddy for students to ask questions and get help.",
     href: "/studying-assistant",
     Icon: GraduationCap,
+    roles: ['student', 'admin'],
   },
   {
     title: "Assessment Generator",
     description: "Create on-demand oral or written assessment questions.",
     href: "/assessment-generator",
     Icon: ClipboardCheck,
+    roles: ['teacher', 'admin'],
   },
   {
     title: "Lesson Planner",
     description: "Craft weekly lesson plans based on syllabus and grade.",
     href: "/lesson-planner",
     Icon: CalendarDays,
+    roles: ['teacher', 'admin'],
   },
   {
     title: "Student Progress",
     description: "Visualize student performance and track assessment history.",
     href: "/progress-tracker",
     Icon: BarChart3,
+    roles: ['teacher', 'student', 'admin'],
   },
 ];
 
 export default function DashboardPage() {
   const { user } = useAuth();
+
+  const features = React.useMemo(() => {
+    if (!user) return [];
+    const userRole = user.is_admin ? 'admin' : user.role;
+    if (!userRole) return [];
+    return allFeatures.filter(feature => feature.roles.includes(userRole));
+  }, [user]);
+
   return (
     <div className="flex flex-col gap-8">
       <div>
