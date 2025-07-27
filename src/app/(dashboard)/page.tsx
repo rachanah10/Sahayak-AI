@@ -69,8 +69,7 @@ const features = [
   },
 ];
 
-export default function DashboardPage({ params }: { params: {} }) {
-  React.use(params);
+export default function DashboardPage() {
   const { user } = useAuth();
   return (
     <div className="flex flex-col gap-8">
