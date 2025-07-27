@@ -147,6 +147,7 @@ const prompt = ai.definePrompt({
     schema: GenerateAssessmentQuestionsOutputSchema,
   },
   prompt: `You are an expert teacher creating grade-appropriate assessment questions. Generate a set of questions with varying difficulty levels from 1 (easiest) to 5 (hardest) based on the following details.
+  Generate questions based on the input from the user and generate numQuestions * 3 questions in total.
 
   Subject: {{subject}}
   Topic/Chapter: {{topic}}
@@ -178,15 +179,7 @@ const generateAssessmentQuestionsFlow = ai.defineFlow(
     outputSchema: GenerateAssessmentQuestionsOutputSchema,
   },
   async input => {
-    // Multiply the number of questions by 3 before sending to the prompt
-    const totalQuestionsToGenerate = input.numQuestions * 3;
-    
-    const promptInput = {
-      ...input,
-      numQuestions: totalQuestionsToGenerate,
-    };
-
-    const {output} = await prompt(promptInput);
+    const {output} = await prompt(input);
     if (!output) {
       throw new Error('Failed to generate assessment. The prompt may have been blocked by safety settings.');
     }
