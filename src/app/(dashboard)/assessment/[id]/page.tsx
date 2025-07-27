@@ -29,6 +29,7 @@ interface AssessmentDetails {
   id: string;
   topic: string;
   grade: string;
+  questionType: string;
   timer?: number;
   questions: Question[];
 }
@@ -66,14 +67,20 @@ export default function TakeAssessmentPage() {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data() as any;
-        setAssessment({ ...data, id: docSnap.id });
+        const processedQuestions = data.questions.map((q: Question) => ({
+            ...q,
+            questionType: q.questionType || data.questionType || 'Mix' // Fallback for older data
+        }));
+
+        const assessmentData = { ...data, id: docSnap.id, questions: processedQuestions };
+        setAssessment(assessmentData);
         if (data.timer) setTimeLeft(data.timer * 60);
         setStartTime(Date.now());
         
-        const totalToAsk = Math.max(1, Math.floor(data.questions.length / 3));
+        const totalToAsk = Math.max(1, Math.floor(processedQuestions.length / 3));
         setQuestionsToAsk(totalToAsk);
 
-        const res = await getNextAdaptiveQuestionAction({ allQuestions: data.questions, answeredQuestions: [], questionsToAsk: totalToAsk });
+        const res = await getNextAdaptiveQuestionAction({ allQuestions: processedQuestions, answeredQuestions: [], questionsToAsk: totalToAsk });
         if (res.nextQuestion) {
             setCurrentQuestion(res.nextQuestion);
             setStatus("in-progress");
@@ -152,10 +159,12 @@ export default function TakeAssessmentPage() {
     setCurrentAnswer("");
     setLastAnswerResult(null);
 
+    const fullHistory = [...answeredQuestions];
+
     try {
         const res = await getNextAdaptiveQuestionAction({
             allQuestions: assessment.questions,
-            answeredQuestions: answeredQuestions,
+            answeredQuestions: fullHistory,
             questionsToAsk,
         });
 
@@ -169,7 +178,7 @@ export default function TakeAssessmentPage() {
                   studentId: user.uid,
                   assessmentId: id as string,
                   assessmentTopic: assessment.topic,
-                  questionsAttempted: answeredQuestions,
+                  questionsAttempted: fullHistory,
                   timeTaken,
                   adaptiveScore: res.finalScore ?? 0,
               });
@@ -293,3 +302,5 @@ export default function TakeAssessmentPage() {
     </div>
   );
 }
+
+    
