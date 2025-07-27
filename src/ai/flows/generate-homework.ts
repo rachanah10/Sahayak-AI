@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -141,7 +142,7 @@ const generateHomeworkFlow = ai.defineFlow(
     outputSchema: GenerateHomeworkOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await generateHomeworkPrompt(input);
     return output!;
   }
 );
