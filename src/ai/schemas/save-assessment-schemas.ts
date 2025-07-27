@@ -5,6 +5,7 @@ const QuestionSchema = z.object({
     no: z.string(),
     text: z.string(),
     answer: z.string(),
+    options: z.array(z.string()).optional(),
     difficulty: z.number().min(1).max(5),
     tags: z.array(z.string()),
 });
@@ -21,3 +22,5 @@ export const SaveAssessmentInputSchema = z.object({
 });
 
 export type SaveAssessmentInput = z.infer<typeof SaveAssessmentInputSchema>;
+
+    

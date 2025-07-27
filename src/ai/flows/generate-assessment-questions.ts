@@ -53,6 +53,7 @@ const QuestionSchema = z.object({
     no: z.string().describe("Question number, e.g., '1'"),
     text: z.string().describe("The text of the question."),
     answer: z.string().describe("The correct answer to the question."),
+    options: z.array(z.string()).optional().describe("A list of options for multiple choice questions. This should be null for other question types."),
     difficulty: z.number().min(1).max(5).describe("Difficulty rating from 1 (easiest) to 5 (hardest)."),
     tags: z.array(z.string()).describe("Relevant tags for the question."),
 });
@@ -158,10 +159,11 @@ const prompt = ai.definePrompt({
   Instructions:
   1. Generate exactly {{numQuestions}} questions in total.
   2. For each question, provide all the fields specified in the output schema.
-  3. The 'difficulty' field must be a number between 1 and 5. Ensure there is a good mix of difficulties (e.g., some 1s, some 2s, up to 5) across all generated questions.
-  4. Ensure the question text, answer, and tags are relevant and accurate for the grade level.
-  5. The 'no' field should be a string representing the question number (e.g., "1", "2", ...).
-  6. Generate a suitable title for the test based on the subject and topic.
+  3. **For 'Multiple Choice' questions, you MUST populate the 'options' array with 4 plausible options.** One of these options must be the correct answer. For all other question types, the 'options' field should be omitted.
+  4. The 'difficulty' field must be a number between 1 and 5. Ensure there is a good mix of difficulties (e.g., some 1s, some 2s, up to 5) across all generated questions.
+  5. Ensure the question text, answer, options, and tags are relevant and accurate for the grade level.
+  6. The 'no' field should be a string representing the question number (e.g., "1", "2", ...).
+  7. Generate a suitable title for the test based on the subject and topic.
 `,
   config: {
     safetySettings,
@@ -190,3 +192,5 @@ const generateAssessmentQuestionsFlow = ai.defineFlow(
     return output;
   }
 );
+
+    

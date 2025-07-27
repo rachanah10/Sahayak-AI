@@ -5,6 +5,7 @@ export const QuestionSchema = z.object({
     no: z.string().describe("Question number, e.g., '1'"),
     text: z.string().describe("The text of the question."),
     answer: z.string().describe("The correct answer to the question."),
+    options: z.array(z.string()).optional().describe("A list of options for multiple choice questions."),
     difficulty: z.number().min(1).max(5).describe("Difficulty rating from 1 (easiest) to 5 (hardest)."),
     tags: z.array(z.string()).describe("Relevant tags for the question."),
 });
@@ -29,3 +30,5 @@ export const GetNextQuestionOutputSchema = z.object({
     nextQuestion: QuestionSchema.optional().describe("The next question for the student to answer. Should be null if the assessment is complete."),
     finalScore: z.number().optional().describe("The final, difficulty-weighted score. Should only be present if the assessment is complete."),
 });
+
+    

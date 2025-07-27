@@ -225,6 +225,15 @@ export default function AssessmentGeneratorPage() {
     newQuestions[index][field] = value;
     setEditedAssessment({ ...editedAssessment, questions: newQuestions });
   };
+
+  const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
+      if (!editedAssessment) return;
+      const newQuestions = [...editedAssessment.questions];
+      if (newQuestions[qIndex].options) {
+        newQuestions[qIndex].options![oIndex] = value;
+        setEditedAssessment({ ...editedAssessment, questions: newQuestions });
+      }
+  }
   
   const handlePublish = async () => {
     if (!editedAssessment || !user) return;
@@ -468,13 +477,33 @@ export default function AssessmentGeneratorPage() {
                         className="text-base"
                     />
 
-                    <Label htmlFor={`q-ans-${index}`} className="font-semibold text-primary">Answer</Label>
-                    <Textarea
-                        id={`q-ans-${index}`}
-                        value={q.answer}
-                        onChange={(e) => handleQuestionChange(index, 'answer', e.target.value)}
-                        className="text-base"
-                    />
+                    {q.options ? (
+                        <div className="space-y-2 pt-2">
+                            <Label className="font-semibold">Options</Label>
+                            {q.options.map((opt, optIndex) => (
+                                <div key={optIndex} className="flex items-center gap-2">
+                                     <Input
+                                        id={`q-${index}-opt-${optIndex}`}
+                                        value={opt}
+                                        onChange={(e) => handleOptionChange(index, optIndex, e.target.value)}
+                                        className={cn("text-base", q.answer === opt && "border-primary ring-2 ring-primary")}
+                                     />
+                                </div>
+                            ))}
+                             <p className="text-xs text-muted-foreground">Correct Answer: {q.answer}</p>
+                        </div>
+                    ) : (
+                         <div>
+                            <Label htmlFor={`q-ans-${index}`} className="font-semibold text-primary">Answer</Label>
+                            <Textarea
+                                id={`q-ans-${index}`}
+                                value={q.answer}
+                                onChange={(e) => handleQuestionChange(index, 'answer', e.target.value)}
+                                className="text-base"
+                            />
+                        </div>
+                    )}
+                   
                     <div className="flex flex-wrap gap-2 pt-1">
                         {q.tags.map(tag => (
                             <Badge key={tag} variant="outline">{tag}</Badge>
@@ -490,3 +519,5 @@ export default function AssessmentGeneratorPage() {
     </div>
   );
 }
+
+    

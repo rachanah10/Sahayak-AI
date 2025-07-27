@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ClipboardCheck, AlertCircle, CheckCircle, Clock, ArrowRight, Lightbulb } from 'lucide-react';
+import { ClipboardCheck, AlertCircle, CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAssessmentAction, getNextAdaptiveQuestionAction, gradeAnswerAction } from '@/app/actions';
@@ -19,6 +19,8 @@ import type { Question } from '@/ai/flows/generate-assessment-questions';
 import type { AnsweredQuestion } from '@/ai/schemas/adaptive-assessment-schemas';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface AssessmentDetails {
   id: string;
@@ -218,6 +220,7 @@ export default function TakeAssessmentPage() {
   }
 
   const progress = (answeredQuestions.length / questionsToAsk) * 100;
+  const isMcq = currentQuestion.options && currentQuestion.options.length > 0;
 
   return (
     <div className="flex flex-col gap-8 max-w-3xl mx-auto">
@@ -241,17 +244,28 @@ export default function TakeAssessmentPage() {
           </CardHeader>
           <CardContent className="space-y-6">
               <div className="p-4 border rounded-lg space-y-3 bg-muted/20 min-h-[250px]">
-                <div className="flex justify-between items-center">
-                    <p className="text-lg font-semibold">{currentQuestion.text}</p>
+                <div className="flex justify-between items-start">
+                    <p className="text-lg font-semibold flex-1">{currentQuestion.text}</p>
                     <Badge variant="outline">Difficulty: {currentQuestion.difficulty}/5</Badge>
                 </div>
-                <Textarea
-                  id={`answer`}
-                  placeholder="Your answer..."
-                  value={currentAnswer}
-                  onChange={(e) => setCurrentAnswer(e.target.value)}
-                  className="bg-background min-h-[150px]"
-                />
+                {isMcq ? (
+                    <RadioGroup value={currentAnswer} onValueChange={setCurrentAnswer} className="space-y-2 pt-2">
+                        {currentQuestion.options?.map((option, index) => (
+                            <div key={index} className="flex items-center space-x-2 p-3 rounded-md bg-background border has-[:checked]:border-primary">
+                                <RadioGroupItem value={option} id={`option-${index}`} />
+                                <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">{option}</Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                ) : (
+                    <Textarea
+                      id={`answer`}
+                      placeholder="Your answer..."
+                      value={currentAnswer}
+                      onChange={(e) => setCurrentAnswer(e.target.value)}
+                      className="bg-background min-h-[150px]"
+                    />
+                )}
               </div>
           </CardContent>
           <CardFooter className="flex justify-end">
@@ -265,3 +279,5 @@ export default function TakeAssessmentPage() {
     </div>
   );
 }
+
+    
