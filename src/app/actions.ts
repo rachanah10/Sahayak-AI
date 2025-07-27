@@ -6,7 +6,7 @@ import {
   suggestTagsForContentAction,
 } from "@/ai/flows/generate-localized-content";
 
-import { generateHomework } from "@/ai/flows/generate-homework";
+import { generateHomeworkAction, suggestHomeworkTagsAction } from "@/ai/flows/generate-homework";
 import { answerTeachingQuestion } from "@/ai/flows/answer-teaching-question";
 import { answerStudyingQuestion } from "@/ai/flows/answer-studying-question";
 import { generateAssessmentQuestions } from "@/ai/flows/generate-assessment-questions";
@@ -16,6 +16,9 @@ import { saveToContentLibrary } from "@/ai/flows/save-to-content-library";
 import { saveAssessment } from "@/ai/flows/save-assessment";
 import { getAuth } from "firebase-admin/auth";
 import { initAdmin } from "@/lib/firebase-admin";
+import type { SaveToContentLibraryInput } from "@/ai/schemas/save-to-content-library-schemas";
+import type { SaveAssessmentInput } from "@/ai/schemas/save-assessment-schemas";
+
 
 async function getCurrentUserId(): Promise<string> {
     initAdmin();
@@ -32,21 +35,22 @@ async function getCurrentUserId(): Promise<string> {
 export {
   generateLocalizedContentAction,
   suggestTagsForContentAction,
+  generateHomeworkAction,
+  suggestHomeworkTagsAction,
 };
 
-export const generateHomeworkAction = generateHomework;
 export const answerTeachingQuestionAction = answerTeachingQuestion;
 export const answerStudyingQuestionAction = answerStudyingQuestion;
 export const generateAssessmentQuestionsAction = generateAssessmentQuestions;
 export const createWeeklyLessonPlanAction = createWeeklyLessonPlan;
 export const suggestFollowUpContentAction = suggestFollowUpContent;
 
-export async function saveToContentLibraryAction(input: any) {
+export async function saveToContentLibraryAction(input: SaveToContentLibraryInput) {
     const userId = await getCurrentUserId();
     return saveToContentLibrary(input, userId);
 }
 
-export async function saveAssessmentAction(input: any) {
+export async function saveAssessmentAction(input: SaveAssessmentInput) {
      const userId = await getCurrentUserId();
     return saveAssessment(input, userId);
 }

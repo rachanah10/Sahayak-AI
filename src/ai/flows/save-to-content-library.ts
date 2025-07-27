@@ -20,11 +20,30 @@ export async function saveToContentLibrary(input: SaveToContentLibraryInput, use
   // Ensure Firebase Admin is initialized
   initAdmin();
   const db = getFirestore();
-  const docRef = await db.collection('content-library').add({
+
+  const docData: any = {
     ...input,
     userId: userId,
     createdAt: new Date(),
-  });
+  };
+
+  // The 'prompt' field will be used as the title.
+  // For answer keys, we prepend "Answer Key: " to the original prompt.
+  if (input.type === 'AnswerKey') {
+    docData.prompt = `Answer Key: ${input.prompt}`;
+    docData.content = input.content;
+  } else {
+    // For Story and Homework, content is stored in specific fields
+    if (input.type === 'Story') {
+        docData.story = input.content;
+        docData.imageUrl = input.imageUrl;
+    } else if (input.type === 'Homework') {
+        docData.worksheet = input.content;
+    }
+  }
+
+
+  const docRef = await db.collection('content-library').add(docData);
 
   return { id: docRef.id };
 }
