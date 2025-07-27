@@ -188,6 +188,7 @@ export default function AssessmentGeneratorPage() {
       const payload: any = {
         ...data,
         tags: Array.from(selectedTags),
+        deadline: data.deadline ? format(data.deadline, "PPP") : undefined,
       };
 
       if (data.inputType === 'upload' && data.image && data.image.length > 0) {
@@ -220,8 +221,8 @@ export default function AssessmentGeneratorPage() {
     try {
         await saveAssessmentAction({
             ...formValues,
-            topic: formValues.topic,
             subject: formValues.subject,
+            topic: formValues.topic,
             deadline: formValues.deadline ? format(formValues.deadline, "PPP") : undefined,
             questions: assessment.questions,
         })
@@ -364,7 +365,7 @@ export default function AssessmentGeneratorPage() {
                             <Calendar
                             mode="single"
                             selected={formValues.deadline}
-                            onSelect={(date) => setValue("deadline", date || new Date())}
+                            onSelect={(date) => setValue("deadline", date || undefined)}
                             initialFocus
                             />
                         </PopoverContent>
