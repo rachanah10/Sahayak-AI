@@ -77,7 +77,7 @@ const mockStudentData: StudentPerformance[] = [
   },
   {
     id: 3,
-    name: "Rohan Das",
+    name: "",
     performance: { math: 72, science: 65, reading: 80, writing: 75, history: 78 },
     assessments: [
       { id: "rd1", topic: "Grammar and Punctuation", score: 78, date: "2024-05-13" },
