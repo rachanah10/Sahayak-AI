@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { PageHeader } from "@/components/page-header";
-import { Users } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -64,7 +64,7 @@ export default function ViewAssessmentsPage() {
       <PageHeader
         title="View Assessments"
         description="Review and manage all your created assessments."
-        Icon={Users}
+        Icon={ClipboardCheck}
       />
 
       {isLoading ? (
