@@ -145,6 +145,7 @@ const imagePromptGenerator = ai.definePrompt({
   Based on the user's request, generate a detailed, descriptive prompt for a text-to-image model.
   This prompt should result in a simple, blackboard-friendly, hand-drawn style diagram suitable for the specified grade level.
   The prompt should be in English.
+  IMPORTANT: The generated image should be low in detail and complexity to ensure a small file size, preferably under 1MB.
 
   User's Request:
   - Story Idea: "{{{prompt}}}"
@@ -158,7 +159,7 @@ const imagePromptGenerator = ai.definePrompt({
 
   Create a single, clear, and descriptive image generation prompt based on this information.
   For example, if the story is about "a clever fox outsmarting a tiger in a forest", a good prompt would be:
-  "A simple, hand-drawn style, blackboard-friendly diagram showing a small, clever red fox looking proud, and a large, frustrated tiger looking away. The scene is a simple forest with a few trees and bushes. The style should be clear and easy for young children to understand."
+  "A simple, hand-drawn style, blackboard-friendly diagram showing a small, clever red fox looking proud, and a large, frustrated tiger looking away. The scene is a simple forest with a few trees and bushes. The style should be clear and easy for young children to understand, with minimal colors and details."
   `,
   config: {
     safetySettings,
